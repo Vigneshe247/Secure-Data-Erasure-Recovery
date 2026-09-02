@@ -75,66 +75,24 @@ class StorageAnalyzerService:
     @classmethod
     async def get_or_create_devices(cls, db: AsyncSession) -> List[StorageDevice]:
         """
-        Loads devices from DB or seeds default system + safe demo devices.
+        Dynamically fetches real system devices on every call.
         """
+        # We deliberately do not delete sandbox devices from DB to preserve foreign keys 
+        # for seeded demo Erasure Operations, but we filter them out of the return list later.
         result = await db.execute(select(StorageDevice))
-        devices = result.scalars().all()
-
-        if not devices:
-            # 1. Create Safe Demo Storage Sandbox A (SSD/NVMe simulation)
-            demo_ssd_path = cls.ensure_sandbox_image("demo_ssd_sandbox.img", size_mb=32)
-            demo_ssd = StorageDevice(
-                name="Safe Demo Storage A (NVMe Sandbox)",
-                device_path=str(demo_ssd_path),
-                storage_type="NVME",
-                filesystem="NTFS",
-                total_capacity_bytes=32 * 1024 * 1024,
-                used_capacity_bytes=18 * 1024 * 1024,
-                is_sandbox=True,
-                trim_supported=True,
-                ftl_aware=True,
-                health_status="OPTIMAL",
-                risk_level="MEDIUM",
-                metadata_json=json.dumps({
-                    "controller": "DataShield Virtual NVMe FTL Controller v2.1",
-                    "wear_leveling_status": "Active (Dynamic + Static)",
-                    "ftl_table_entries": 65536,
-                    "over_provisioning_pct": 7.0,
-                    "trim_state": "Enabled",
-                    "sandbox_mode": True,
-                    "safe_for_testing": True
-                })
-            )
-            db.add(demo_ssd)
-
-            # 2. Create Safe Demo Storage Sandbox B (Magnetic HDD simulation)
-            demo_hdd_path = cls.ensure_sandbox_image("demo_hdd_sandbox.img", size_mb=16)
-            demo_hdd = StorageDevice(
-                name="Safe Demo Storage B (Magnetic HDD Sandbox)",
-                device_path=str(demo_hdd_path),
-                storage_type="HDD",
-                filesystem="EXT4",
-                total_capacity_bytes=16 * 1024 * 1024,
-                used_capacity_bytes=9 * 1024 * 1024,
-                is_sandbox=True,
-                trim_supported=False,
-                ftl_aware=False,
-                health_status="HEALTHY",
-                risk_level="LOW",
-                metadata_json=json.dumps({
-                    "rotational_speed_rpm": 7200,
-                    "sector_size_bytes": 512,
-                    "bad_sectors_count": 0,
-                    "wear_leveling_status": "N/A (Magnetic Platter)",
-                    "sandbox_mode": True,
-                    "safe_for_testing": True
-                })
-            )
-            db.add(demo_hdd)
-
-            # 3. Add Real Host Drives (Read-Only safe inspection)
-            real_devices = cls.get_system_devices()
-            for rdev in real_devices:
+        db_devices = result.scalars().all()
+        
+        # Get real host drives
+        real_devices = cls.get_system_devices()
+        
+        # Upsert real devices to DB so they have valid IDs
+        for rdev in real_devices:
+            existing = next((d for d in db_devices if d.device_path == rdev["device_path"]), None)
+            if existing:
+                existing.total_capacity_bytes = rdev["total_capacity_bytes"]
+                existing.used_capacity_bytes = rdev["used_capacity_bytes"]
+                existing.health_status = rdev["health_status"]
+            else:
                 host_device = StorageDevice(
                     name=rdev["name"],
                     device_path=rdev["device_path"],
@@ -146,16 +104,15 @@ class StorageAnalyzerService:
                     trim_supported=rdev["trim_supported"],
                     ftl_aware=rdev["ftl_aware"],
                     health_status=rdev["health_status"],
-                    risk_level="HIGH",  # High risk because it's a real host drive - requires extra safety
+                    risk_level="HIGH",
                     metadata_json=rdev["metadata_json"]
                 )
                 db.add(host_device)
 
-            await db.commit()
-            result = await db.execute(select(StorageDevice))
-            devices = result.scalars().all()
-
-        return devices
+        await db.commit()
+        
+        final_result = await db.execute(select(StorageDevice).where(StorageDevice.is_sandbox == False))
+        return final_result.scalars().all()
 
     @staticmethod
     def analyze_storage_profile(device: StorageDevice) -> Dict[str, Any]:

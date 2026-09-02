@@ -61,7 +61,7 @@ const METHODS: DeleteMethod[] = [
   { id: 'dod3',      name: 'DoD 3-Pass',          passes: 3,  standard: 'DoD 5220.22-M',    time: '~6s',  accent: '#2563EB', desc: 'Pass 1: zeros, Pass 2: ones, Pass 3: random + read-back verification.', risk: 'medium' },
   { id: 'dod7',      name: 'DoD 7-Pass Military', passes: 7,  standard: 'DoD 5220.22-M ECE',time: '~12s', accent: '#2563EB', desc: 'Alternating 0x00, 0xFF, complements, and PRNG random byte streams.', risk: 'medium' },
   { id: 'gutmann',   name: 'Gutmann 35-Pass',     passes: 35, standard: 'Gutmann 1996',     time: '~25s', accent: '#DC2626', desc: '35-pass magnetic transition sequence for absolute cryptographic obliteration.', risk: 'extreme' },
-  { id: 'nist_purge',name: 'NIST Purge (Crypto)', passes: 1,  standard: 'NIST SP 800-88r1', time: '~4s',  accent: '#0D9488', desc: 'Cryptographic erase: shreds symmetric keys rendering ciphertext permanently unrecoverable.', risk: 'safe' },
+  { id: 'nist_purge',name: 'NIST Purge (Crypto)', passes: 1,  standard: 'NIST SP 800-88r1', time: '~4s',  accent: '#0D9488', desc: 'Cryptographic erase: deletes symmetric keys rendering ciphertext permanently unrecoverable.', risk: 'safe' },
   { id: 'ssd_secure',name: 'ATA Secure Erase',    passes: 1,  standard: 'ATA Controller',   time: '~8s',  accent: '#D97706', desc: 'Issues direct block erasure command to storage controller firmware.', risk: 'medium' },
   { id: 'instant',   name: 'Standard Unlink',     passes: 1,  standard: 'OS Filesystem',    time: '< 1s', accent: '#16A34A', desc: 'Removes directory pointer only (non-secure, recoverable in forensics).', risk: 'safe' },
 ];
@@ -79,9 +79,14 @@ const FILE_TYPES = [
 
 type Phase = 'config' | 'executing' | 'done';
 
-export const SecureDelete: React.FC = () => {
+interface SecureDeleteProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export const SecureDelete: React.FC<SecureDeleteProps> = ({ setActiveTab }) => {
   const [mode, setMode]               = useState<'path' | 'data'>('path');
-  const [path, setPath]               = useState('sample.webp');
+  const [path, setPath]               = useState('');
+  const [lastDeletedFile, setLastDeletedFile] = useState<string | null>(null);
   const [rawData, setRawData]         = useState('CONFIDENTIAL FINANCIAL DATA - SALARIES 2026\nAccount: 4892-0012-9938\nRouting: 021000021\nBalance: $4,850,200.00\nCryptographic Token: 8f9a2b4e7c1d3e5f');
   const [dataFormat, setDataFormat]   = useState<'plaintext' | 'hex' | 'json' | 'binary'>('plaintext');
   const [recursive, setRecursive]     = useState(true);
@@ -240,7 +245,16 @@ export const SecureDelete: React.FC = () => {
 
       setProgress(100);
       setProgLabel('Operation Complete: Target permanently eradicated from disk.');
-      setTimeout(() => setPhase('done'), 400);
+      setLastDeletedFile(targetToShred);
+      setPath('');
+      setSelectedFileMeta(null);
+      setResolvedPathInfo(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setTimeout(() => {
+        setPhase('done');
+      }, 400);
     } catch (err: any) {
       addLog(`[ERROR] Sanitization execution halted: ${err.message}`);
       setProgLabel(`Error: ${err.message}`);
@@ -255,6 +269,12 @@ export const SecureDelete: React.FC = () => {
     setLog([]);
     setProgress(0);
     setShredResult(null);
+    setPath('');
+    setSelectedFileMeta(null);
+    setResolvedPathInfo(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const setPresetPath = (preset: string) => {
@@ -272,19 +292,72 @@ export const SecureDelete: React.FC = () => {
             <ShieldAlert size={14} /> Granular Data Sanitization &amp; Physical Disk Erasure
           </div>
           <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', color: '#1E2229' }}>
-            Secure File &amp; Data Delete
+            Secure File &amp; Data Deletion
           </h1>
         </div>
         {phase !== 'config' && (
           <button onClick={reset} className="ds-btn ds-btn-ghost ds-btn-sm">
-            <RotateCw size={13} /> New Shred Operation
+            <RotateCw size={13} /> New Deletion Operation
           </button>
         )}
       </div>
 
       {/* ═══ CONFIGURATION PHASE ═══ */}
       {phase === 'config' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 18 }}>
+        <>
+          {lastDeletedFile && (
+            <div style={{
+              padding: '14px 18px',
+              borderRadius: 14,
+              background: 'rgba(22, 163, 74, 0.08)',
+              border: '1px solid rgba(22, 163, 74, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#15803D' }}>
+                <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+                <div>
+                  <strong>Target Eradicated:</strong> <code style={{ background: 'rgba(22,163,74,0.12)', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>{lastDeletedFile}</code> was successfully wiped from disk and registered in Recovery catalog.
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {setActiveTab && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('recovery')}
+                    style={{
+                      background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '6px 14px',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <RotateCw size={12} /> View in Recovery Page →
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setLastDeletedFile(null)}
+                  style={{ background: 'none', border: 'none', color: '#5E6676', cursor: 'pointer', padding: 4 }}
+                  title="Dismiss notification"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 18 }}>
           {/* Main Left Config Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {/* Target Mode Selector Tabs */}
@@ -338,7 +411,7 @@ export const SecureDelete: React.FC = () => {
                       boxShadow: mode === 'data' ? '0 4px 12px rgba(255,126,95,0.25)' : 'none',
                     }}
                   >
-                    <Binary size={13} /> Raw Data / Payload Shred
+                    <Binary size={13} /> Raw Data / Payload Deletion
                   </button>
                 </div>
               </div>
@@ -368,16 +441,44 @@ export const SecureDelete: React.FC = () => {
                       style={{ display: 'none' }}
                     />
 
-                    {/* Target Path Input with Integrated Select File Button */}
+                    {/* Target Path Input with Integrated Select File Button and Clear Button */}
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                       <Terminal size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', zIndex: 2 }} />
                       <input
                         value={path}
                         onChange={(e) => { setPath(e.target.value); }}
-                        placeholder="Enter full path e.g. C:\Users\...\sample.webp or click 'Select File' →"
+                        placeholder="Enter full path e.g. C:\Users\...\document.docx or click 'Select File' →"
                         className="ds-input"
-                        style={{ paddingLeft: 38, paddingRight: 140, fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}
+                        style={{ paddingLeft: 38, paddingRight: path ? 160 : 130, fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}
                       />
+                      {path && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPath('');
+                            setSelectedFileMeta(null);
+                            setResolvedPathInfo(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          title="Clear selected target"
+                          style={{
+                            position: 'absolute',
+                            right: 122,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#94A3B8',
+                            padding: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            zIndex: 3,
+                          }}
+                        >
+                          <X size={15} />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -426,7 +527,11 @@ export const SecureDelete: React.FC = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => { setSelectedFileMeta(null); setPath('sample.webp'); }}
+                          onClick={() => {
+                            setSelectedFileMeta(null);
+                            setPath('');
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
                           style={{ background: 'none', border: 'none', color: '#5E6676', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontSize: 11 }}
                         >
                           <X size={13} /> Clear
@@ -442,11 +547,11 @@ export const SecureDelete: React.FC = () => {
                     </span>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
                       {[
-                        { label: 'sample.webp', full: 'sample.webp' },
-                        { label: 'Desktop\\sample.webp', full: 'C:\\Users\\E VIGNESH\\OneDrive\\Desktop\\sample.webp' },
-                        { label: 'Final SIH\\sample.webp', full: 'C:\\Users\\E VIGNESH\\OneDrive\\Desktop\\FInal SIH\\sample.webp' },
                         { label: 'confidential_memo.docx', full: 'confidential_memo.docx' },
                         { label: 'financial_audit_2026.db', full: 'financial_audit_2026.db' },
+                        { label: 'infrastructure_diagram.png', full: 'infrastructure_diagram.png' },
+                        { label: 'sample.webp', full: 'sample.webp' },
+                        { label: 'system_event.log', full: 'system_event.log' },
                       ].map((pr) => (
                         <button
                           key={pr.label}
@@ -513,7 +618,7 @@ export const SecureDelete: React.FC = () => {
                 /* Raw Data Ingestion View */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <label style={S.label}>Direct Data / Payload to Shred</label>
+                    <label style={S.label}>Direct Data / Payload for Deletion</label>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {(['plaintext', 'hex', 'json', 'binary'] as const).map((fmt) => (
                         <button
@@ -723,11 +828,23 @@ export const SecureDelete: React.FC = () => {
 
               {/* One-Click Trigger for the Confirm Popup Modal */}
               <button
-                onClick={() => setShowConfirmModal(true)}
+                onClick={() => {
+                  if (mode === 'path' && !path.trim()) {
+                    alert('Please select or specify a target file to delete.');
+                    return;
+                  }
+                  setShowConfirmModal(true);
+                }}
+                disabled={mode === 'path' && !path.trim()}
                 className="ds-btn ds-btn-danger ds-btn-lg"
-                style={{ width: '100%', justifyContent: 'center' }}
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  opacity: mode === 'path' && !path.trim() ? 0.6 : 1,
+                  cursor: mode === 'path' && !path.trim() ? 'not-allowed' : 'pointer'
+                }}
               >
-                <Trash2 size={16} /> Proceed to Shred Gate
+                <Trash2 size={16} /> Proceed to Deletion
               </button>
             </div>
 
@@ -746,8 +863,8 @@ export const SecureDelete: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#5E6676' }}>Target:</span>
-                  <code style={{ color: '#FF7E5F', fontSize: 11, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {mode === 'path' ? path : `${rawData.length} bytes`}
+                  <code style={{ color: path ? '#FF7E5F' : '#94A3B8', fontSize: 11, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {mode === 'path' ? (path || 'None Selected') : `${rawData.length} bytes`}
                   </code>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -776,6 +893,7 @@ export const SecureDelete: React.FC = () => {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* ═══ CONFIRMATION MODAL POPUP (NO TYPING REQUIRED) ═══ */}
@@ -805,7 +923,7 @@ export const SecureDelete: React.FC = () => {
                     Confirm to Delete
                   </h2>
                   <div style={{ fontSize: 11, color: '#DC2626', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                    Irreversible Permanent Data Shred
+                    Irreversible Permanent Data Deletion
                   </div>
                 </div>
               </div>
@@ -885,7 +1003,7 @@ export const SecureDelete: React.FC = () => {
                 )}
                 <div>
                   <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 18, color: '#1E2229' }}>
-                    {phase === 'executing' ? 'Shredding in Progress...' : 'Sanitization Complete & Verified'}
+                    {phase === 'executing' ? 'Deleting in Progress...' : 'Sanitization Complete & Verified'}
                   </h2>
                   <div style={{ fontSize: 12, color: '#5E6676' }}>
                     {progLabel}
@@ -959,11 +1077,29 @@ export const SecureDelete: React.FC = () => {
             {phase === 'done' && (
               <div style={{ display: 'flex', gap: 12, marginTop: 22 }}>
                 <button onClick={reset} className="ds-btn ds-btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>
-                  <RotateCw size={14} /> Start Another Shred
+                  <RotateCw size={14} /> Delete Another File
                 </button>
-                <button onClick={reset} className="ds-btn ds-btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-                  <CheckCircle2 size={14} /> Return to Dashboard
-                </button>
+                {setActiveTab ? (
+                  <button
+                    onClick={() => {
+                      reset();
+                      setActiveTab('recovery');
+                    }}
+                    className="ds-btn ds-btn-primary"
+                    style={{
+                      flex: 1.3,
+                      justifyContent: 'center',
+                      background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
+                      boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)',
+                    }}
+                  >
+                    <CheckCircle2 size={14} /> View in Recovery &amp; Restore →
+                  </button>
+                ) : (
+                  <button onClick={reset} className="ds-btn ds-btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                    <CheckCircle2 size={14} /> Start New Deletion
+                  </button>
+                )}
               </div>
             )}
           </div>

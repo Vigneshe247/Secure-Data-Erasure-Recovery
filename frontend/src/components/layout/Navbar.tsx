@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { useAuth, DEMO_PRESETS } from '../../context/AuthContext';
 import { Role } from '../../types';
-import { AIAssistantModal } from '../AIAssistantModal';
 
 interface NavbarProps {
   activeTab: string;
@@ -23,7 +22,6 @@ const roleColors: Record<string, string> = {
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const { user, logout, quickLogin, firebaseConnected } = useAuth();
   const [demoMenuOpen, setDemoMenuOpen] = useState(false);
-  const [isAIOpen, setIsAIOpen] = useState(false);
   const [tick, setTick] = useState('');
 
   useEffect(() => {
@@ -140,32 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         </div>
 
         {/* Right Section */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* AI Copilot Button */}
-          <button
-            onClick={() => setIsAIOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '7px 14px',
-              borderRadius: 14,
-              border: '1px solid rgba(255,126,95,0.3)',
-              background: 'rgba(255,126,95,0.08)',
-              cursor: 'pointer',
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#FF7E5F',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,126,95,0.14)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,126,95,0.08)'; }}
-          >
-            <Bot size={14} color="#FF7E5F" /> AI Copilot
-          </button>
-
-          {/* Role switcher */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>          {/* Role switcher */}
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setDemoMenuOpen(!demoMenuOpen)}
@@ -300,8 +273,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           </button>
         </div>
       </header>
-
-      <AIAssistantModal isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
     </>
   );
 };

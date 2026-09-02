@@ -59,4 +59,25 @@ class AuditService:
         db.add(audit_entry)
         await db.commit()
         await db.refresh(audit_entry)
+
+        # Cloud Sync to Firestore (non-blocking)
+        try:
+            from backend.app.core.firebase import sync_audit_event_to_firestore
+            await sync_audit_event_to_firestore({
+                "id": audit_entry.id,
+                "timestamp": timestamp_str,
+                "user_id": user_id,
+                "username": username,
+                "role": role,
+                "action": action,
+                "target_resource": target_resource,
+                "operation_id": operation_id,
+                "ip_address": ip_address,
+                "status": status,
+                "details": details or {},
+                "sha256_checksum": checksum,
+            })
+        except Exception:
+            pass
+
         return audit_entry

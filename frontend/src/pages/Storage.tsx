@@ -10,12 +10,12 @@ interface StorageProps {
   setActiveTab: (tab: string) => void;
 }
 
-const SMART = [
-  { label: 'Health Score', value: '99.4%', sub: '0 bad sectors', icon: Gauge, color: '#16A34A' },
-  { label: 'Temperature', value: '32°C', sub: 'Optimal range', icon: Thermometer, color: '#FF7E5F' },
-  { label: 'Power-On Hrs', value: '412h', sub: 'Total uptime', icon: Clock, color: '#2563EB' },
-  { label: 'Wear Leveling', value: '0.2%', sub: 'FTL used', icon: Zap, color: '#D97706' },
-  { label: 'Est. Lifespan', value: '9.8yr', sub: 'TBW 99.8%', icon: HeartPulse, color: '#16A34A' },
+const INITIAL_SMART = [
+  { id: 'health', label: 'Health Score', value: 99.4, unit: '%', sub: '0 bad sectors', icon: Gauge, color: '#16A34A' },
+  { id: 'temp', label: 'Temperature', value: 32, unit: '°C', sub: 'Optimal range', icon: Thermometer, color: '#16A34A' },
+  { id: 'power', label: 'Power-On Hrs', value: 412, unit: 'h', sub: 'Total uptime', icon: Clock, color: '#2563EB' },
+  { id: 'wear', label: 'Wear Leveling', value: 0.20, unit: '%', sub: 'FTL used', icon: Zap, color: '#D97706' },
+  { id: 'life', label: 'Est. Lifespan', value: 9.8, unit: 'yr', sub: 'TBW 99.8%', icon: HeartPulse, color: '#16A34A' },
 ];
 
 export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
@@ -23,8 +23,34 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
   const [selected, setSelected] = useState<StorageDevice | null>(null);
   const [profile, setProfile] = useState<StorageProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState<string | null>(null);
+  const [smartData, setSmartData] = useState(INITIAL_SMART);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSmartData((prev) =>
+        prev.map((item) => {
+          if (item.id === 'temp') {
+            const fluctuation = (Math.random() * 2) - 1;
+            const newTemp = Math.max(30, Math.min(42, item.value + fluctuation));
+            const color = newTemp > 38 ? '#DC2626' : newTemp > 35 ? '#FF7E5F' : '#16A34A';
+            return { ...item, value: parseFloat(newTemp.toFixed(1)), color };
+          }
+          if (item.id === 'wear') {
+            const newWear = item.value + (Math.random() * 0.005);
+            return { ...item, value: parseFloat(newWear.toFixed(3)) };
+          }
+          if (item.id === 'health') {
+             const fluctuation = (Math.random() * 0.2) - 0.1;
+             const newHealth = Math.max(98, Math.min(100, item.value + fluctuation));
+             return { ...item, value: parseFloat(newHealth.toFixed(1)) };
+          }
+          return item;
+        })
+      );
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -168,7 +194,7 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-            {SMART.map((m) => (
+            {smartData.map((m) => (
               <div
                 key={m.label}
                 style={{
@@ -185,7 +211,7 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
                   </span>
                 </div>
                 <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 24, color: m.color }}>
-                  {m.value}
+                  {m.value}{m.unit}
                 </div>
                 <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>{m.sub}</div>
               </div>

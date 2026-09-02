@@ -25,7 +25,7 @@ const GROUPS = [
       { id: 'storage',      label: 'Storage Analyzer',     icon: HardDrive,  perm: 'storage.view' },
       { id: 'recovery',     label: 'File Recovery',        icon: FileSearch, perm: 'recovery.scan' },
       { id: 'erasure',      label: 'Secure Erasure',       icon: Trash2,     perm: 'erasure.request', danger: true },
-      { id: 'shred',        label: 'File / Data Shred',    icon: Trash2,     show: true, badge: 'NEW', danger: true },
+      { id: 'shred',        label: 'File / Data Delete',    icon: Trash2,     show: true, badge: 'NEW', danger: true },
       { id: 'verification', label: 'Post-Erasure Verify',  icon: CheckCheck, perm: 'verification.view' },
     ],
   },

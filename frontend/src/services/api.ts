@@ -11,7 +11,7 @@ import {
   DashboardMetrics,
 } from '../types';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = '/api';
 
 class ApiService {
   private getToken(): string | null {
@@ -20,6 +20,7 @@ class ApiService {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = this.getToken();
+    const fbToken = localStorage.getItem('firebase_token');
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {}),
@@ -27,6 +28,9 @@ class ApiService {
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (fbToken) {
+      headers['X-Firebase-Token'] = fbToken;
     }
 
     const response = await fetch(`${API_BASE}${endpoint}`, {
@@ -262,6 +266,18 @@ class ApiService {
     return this.request(`/reports/recovery/${caseId}/generate`, {
       method: 'POST',
     });
+  }
+
+  async downloadRecoveredFile(id: string): Promise<Blob> {
+    const token = this.getToken();
+    const fbToken = localStorage.getItem('firebase_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (fbToken) headers['X-Firebase-Token'] = fbToken;
+    
+    const response = await fetch(`${API_BASE}/recovery/files/${id}/download`, { headers });
+    if (!response.ok) throw new Error('Failed to download recovered file');
+    return await response.blob();
   }
 
   getReportPdfUrl(reportId: string): string {

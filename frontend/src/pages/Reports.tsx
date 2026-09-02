@@ -8,13 +8,17 @@ export const Reports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [selected, setSelected] = useState<Report | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await api.getReports();
       setReports(data);
       if (data.length > 0) setSelected(data[0]);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -59,6 +63,19 @@ export const Reports: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="ds-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ padding: 16, background: '#FEE2E2', color: '#DC2626', borderRadius: 12, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <strong>Error loading reports:</strong> {error}
+        </div>
+        <button onClick={load} className="ds-btn ds-btn-primary" style={{ alignSelf: 'flex-start' }}>
+          <RefreshCw size={14} /> Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="ds-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
@@ -81,8 +98,19 @@ export const Reports: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18 }}>
-        {/* Document List */}
+      {reports.length === 0 ? (
+        <div className="ds-card" style={{ padding: 60, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <FileText size={40} color="#94A3B8" />
+          <div style={{ color: '#5E6676', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 15 }}>
+            No compliance certificates or audit reports generated yet.
+          </div>
+          <button onClick={handleGenerate} disabled={generating} className="ds-btn ds-btn-primary" style={{ marginTop: 8 }}>
+            <Sparkles size={14} /> {generating ? 'Compiling...' : 'Generate New Certificate'}
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18 }}>
+          {/* Document List */}
         <div className="ds-card" style={{ overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--c-border)' }}>
             <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 14, color: '#1E2229', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -262,7 +290,8 @@ export const Reports: React.FC = () => {
             </span>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

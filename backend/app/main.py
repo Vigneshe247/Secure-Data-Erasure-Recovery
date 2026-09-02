@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+import os
 
-from backend.app.core.config import settings
+from backend.app.core.config import settings, BASE_DIR
 from backend.app.database.session import async_engine, Base, SyncSessionLocal, sync_engine
 from backend.app.api.auth import router as auth_router
 from backend.app.api.users import router as users_router
@@ -74,12 +77,27 @@ app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(dashboard_router, prefix=settings.API_V1_STR)
 app.include_router(ws_router, prefix=settings.API_V1_STR)
 
+FRONTEND_DIST = Path(BASE_DIR).parent / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
 
-@app.get("/")
-async def root():
-    return {
-        "platform": "DataShield",
-        "description": "AI-Assisted Secure Data Erasure + Authorized File Recovery (SIH26149)",
-        "status": "OPERATIONAL",
-        "docs_url": "/docs"
-    }
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # Allow requests to API documentation
+        if full_path.startswith("docs") or full_path.startswith("openapi.json"):
+            return None
+
+        file_path = FRONTEND_DIST / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(FRONTEND_DIST / "index.html")
+else:
+    @app.get("/")
+    async def root():
+        return {
+            "platform": "DataShield",
+            "description": "AI-Assisted Secure Data Erasure + Authorized File Recovery (SIH26149)",
+            "status": "OPERATIONAL",
+            "docs_url": "/docs",
+            "note": "Frontend build not found. Run 'npm run build' in the frontend folder."
+        }

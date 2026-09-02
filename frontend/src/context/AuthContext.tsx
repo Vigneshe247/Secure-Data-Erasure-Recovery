@@ -66,7 +66,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Sync with Firebase Auth in background
       const matchingPreset = Object.values(DEMO_PRESETS).find(p => p.username === username);
       const email = matchingPreset?.email || `${username}@datashield.sih`;
-      await firebaseAuthService.loginWithEmail(email, password);
+      const fbUser = await firebaseAuthService.loginWithEmail(email, password);
+      if (fbUser) {
+        try {
+          const fbToken = await fbUser.getIdToken();
+          localStorage.setItem('firebase_token', fbToken);
+        } catch {
+          // ignore
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -85,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await api.logout();
       await firebaseAuthService.logout();
     } finally {
+      localStorage.removeItem('firebase_token');
       setUser(null);
       setToken(null);
       setPermissions([]);

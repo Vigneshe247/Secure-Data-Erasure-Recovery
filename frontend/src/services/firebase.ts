@@ -22,10 +22,10 @@ import {
 
 // DataShield Firebase Configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB_Demo_DataShield_SIH2026_Key_99X",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "datashield-sih2026.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "datashield-sih2026",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "datashield-sih2026.appspot.com",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB_DataShield_Recovery_2026",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "delete-and-recovery.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "delete-and-recovery",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "delete-and-recovery.appspot.com",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "107401418822",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:107401418822:web:a1b2c3d4e5f6g7h8",
 };
@@ -69,6 +69,15 @@ export const firebaseAuthService = {
       return cred.user;
     } catch (error) {
       console.warn("Firebase anon login fallback:", error);
+      return null;
+    }
+  },
+
+  async getIdToken(): Promise<string | null> {
+    if (!auth || !auth.currentUser) return null;
+    try {
+      return await auth.currentUser.getIdToken();
+    } catch {
       return null;
     }
   },

@@ -44,7 +44,7 @@ const MainLayout: React.FC = () => {
           {activeTab === 'storage' && <Storage setActiveTab={setActiveTab} />}
           {activeTab === 'recovery' && <Recovery />}
           {activeTab === 'erasure' && <Erasure setActiveTab={setActiveTab} />}
-          {activeTab === 'shred' && <SecureDelete />}
+          {activeTab === 'shred' && <SecureDelete setActiveTab={setActiveTab} />}
           {activeTab === 'verification' && <Verification setActiveTab={setActiveTab} />}
           {activeTab === 'reports' && <Reports />}
           {activeTab === 'audit' && <Audit />}

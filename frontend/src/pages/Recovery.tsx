@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  FileSearch, Plus, Play, CheckCircle2, Binary, Sparkles, Hash, Layers, X, FileText
+  FileSearch, Plus, Play, CheckCircle2, Binary, Sparkles, Hash, Layers, X, FileText, Download
 } from 'lucide-react';
 import { api } from '../services/api';
 import { RecoveryCase, RecoveryCandidate, StorageDevice } from '../types';
@@ -151,10 +151,27 @@ export const Recovery: React.FC = () => {
     try {
       await api.recoverCandidates([id]);
       if (selectedCase) setSelectedCase(await api.getRecoveryCase(selectedCase.id));
+      await load();
     } catch (err: any) {
       alert(err.message);
     } finally {
       setRecoveringIds((p) => p.filter((i) => i !== id));
+    }
+  };
+
+  const handleDownload = async (cand: any) => {
+    try {
+      const blob = await api.downloadRecoveredFile(cand.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = cand.original_path?.split('\\').pop()?.split('/').pop() || cand.file_name || `recovered_${cand.id}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -387,41 +404,44 @@ export const Recovery: React.FC = () => {
                             <Sparkles size={12} /> AI
                           </button>
                           {isRecovered ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                padding: '5px 12px',
-                                borderRadius: 10,
-                                background: 'rgba(22,163,74,0.08)',
-                                border: '1px solid rgba(22,163,74,0.22)',
-                                color: '#16A34A',
-                                fontFamily: 'Plus Jakarta Sans, sans-serif',
-                                fontSize: 11,
-                                fontWeight: 700,
-                              }}
-                            >
-                              <CheckCircle2 size={12} /> Done
-                            </span>
-                          ) : cand.recovery_status === 'UNRECOVERABLE' ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                padding: '5px 12px',
-                                borderRadius: 10,
-                                background: 'rgba(220,38,38,0.08)',
-                                border: '1px solid rgba(220,38,38,0.22)',
-                                color: '#DC2626',
-                                fontFamily: 'Plus Jakarta Sans, sans-serif',
-                                fontSize: 11,
-                                fontWeight: 700,
-                              }}
-                            >
-                              <X size={12} /> Wiped
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  padding: '5px 10px',
+                                  borderRadius: 10,
+                                  background: 'rgba(22,163,74,0.08)',
+                                  border: '1px solid rgba(22,163,74,0.22)',
+                                  color: '#16A34A',
+                                  fontFamily: 'Plus Jakarta Sans, sans-serif',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                <CheckCircle2 size={12} /> Done
+                              </span>
+                              <button
+                                onClick={() => handleDownload(cand)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  padding: '5px 10px',
+                                  borderRadius: 10,
+                                  background: 'rgba(22,163,74,0.12)',
+                                  border: '1px solid rgba(22,163,74,0.3)',
+                                  color: '#16A34A',
+                                  fontFamily: 'Plus Jakarta Sans, sans-serif',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Download size={12} /> Download
+                              </button>
+                            </div>
                           ) : (
                             <button
                               onClick={() => handleRecover(cand.id)}
@@ -433,7 +453,9 @@ export const Recovery: React.FC = () => {
                                 padding: '5px 12px',
                                 borderRadius: 10,
                                 border: 'none',
-                                background: isRec ? '#EAE5DE' : 'linear-gradient(135deg, #16A34A, #15803D)',
+                                background: isRec
+                                  ? '#EAE5DE'
+                                  : 'linear-gradient(135deg, #16A34A, #15803D)',
                                 color: '#fff',
                                 cursor: 'pointer',
                                 fontFamily: 'Plus Jakarta Sans, sans-serif',
@@ -442,7 +464,7 @@ export const Recovery: React.FC = () => {
                                 opacity: isRec ? 0.6 : 1,
                               }}
                             >
-                              {isRec ? 'Working...' : 'Recover'}
+                              {isRec ? 'Recovering...' : 'Recover'}
                             </button>
                           )}
                         </div>
