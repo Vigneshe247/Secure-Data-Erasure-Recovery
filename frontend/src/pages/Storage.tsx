@@ -6,50 +6,68 @@ import {
 import { api } from '../services/api';
 import { StorageDevice, StorageProfile } from '../types';
 
-interface StorageProps { setActiveTab: (tab: string) => void; }
+interface StorageProps {
+  setActiveTab: (tab: string) => void;
+}
 
 const SMART = [
-  { label:'Health Score', value:'99.4%', sub:'0 bad sectors', icon:Gauge,       color:'#22c55e' },
-  { label:'Temperature',  value:'32°C',  sub:'Optimal range', icon:Thermometer, color:'#2d7ff9' },
-  { label:'Power-On Hrs', value:'412h',  sub:'Total uptime',  icon:Clock,       color:'#818cf8' },
-  { label:'Wear Leveling',value:'0.2%',  sub:'FTL used',      icon:Zap,         color:'#f59e0b' },
-  { label:'Est. Lifespan',value:'9.8yr', sub:'TBW 99.8%',     icon:HeartPulse,  color:'#22c55e' },
+  { label: 'Health Score', value: '99.4%', sub: '0 bad sectors', icon: Gauge, color: '#16A34A' },
+  { label: 'Temperature', value: '32°C', sub: 'Optimal range', icon: Thermometer, color: '#FF7E5F' },
+  { label: 'Power-On Hrs', value: '412h', sub: 'Total uptime', icon: Clock, color: '#2563EB' },
+  { label: 'Wear Leveling', value: '0.2%', sub: 'FTL used', icon: Zap, color: '#D97706' },
+  { label: 'Est. Lifespan', value: '9.8yr', sub: 'TBW 99.8%', icon: HeartPulse, color: '#16A34A' },
 ];
 
 export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
-  const [devices, setDevices]         = useState<StorageDevice[]>([]);
-  const [selected, setSelected]       = useState<StorageDevice | null>(null);
-  const [profile, setProfile]         = useState<StorageProfile | null>(null);
-  const [loading, setLoading]         = useState(true);
+  const [devices, setDevices] = useState<StorageDevice[]>([]);
+  const [selected, setSelected] = useState<StorageDevice | null>(null);
+  const [profile, setProfile] = useState<StorageProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     try {
       const data = await api.getStorageDevices();
       setDevices(data);
-      if (data.length > 0) { setSelected(data[0]); runAnalysis(data[0].id); }
-    } finally { setLoading(false); }
+      if (data.length > 0) {
+        setSelected(data[0]);
+        runAnalysis(data[0].id);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    load();
+  }, []);
 
   const runAnalysis = async (id: string) => {
-    try { setProfile(await api.analyzeStorage(id)); } catch {}
+    try {
+      setProfile(await api.analyzeStorage(id));
+    } catch {}
   };
 
-  if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', flexDirection:'column', gap:12 }}>
-      <div style={{ width:28, height:28, border:'2px solid #2d7ff9', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-      <span style={{ color:'#8b96a8', fontSize:12, fontFamily:'Barlow Condensed,sans-serif', letterSpacing:'0.12em', textTransform:'uppercase' }}>Scanning hardware</span>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 12 }}>
+        <div style={{ width: 36, height: 36, border: '3px solid rgba(255,126,95,0.25)', borderTopColor: '#FF7E5F', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <span style={{ color: '#5E6676', fontSize: 13, fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Scanning hardware topology
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className="ds-page" style={{ display:'flex', flexDirection:'column', gap:18 }}>
+    <div className="ds-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
-      <div style={{ display:'flex', flexWrap:'wrap', alignItems:'flex-end', justifyContent:'space-between', gap:12 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <div className="ds-section-label" style={{ justifyContent:'flex-start', marginBottom:6 }}>Hardware Topography & FTL Profiler</div>
-          <h1 style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:900, fontSize:32, textTransform:'uppercase', letterSpacing:'0.03em', color:'#f0f4ff' }}>
+          <div className="ds-section-label" style={{ justifyContent: 'flex-start', marginBottom: 6 }}>
+            Hardware Topography &amp; FTL Profiler
+          </div>
+          <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', color: '#1E2229' }}>
             Storage Analyzer
           </h1>
         </div>
@@ -58,127 +76,223 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
         </button>
       </div>
 
-      {/* Device selector */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:10 }}>
+      {/* Device Selector Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
         {devices.map((dev) => {
           const sel = selected?.id === dev.id;
           return (
-            <div key={dev.id} onClick={() => { setSelected(dev); runAnalysis(dev.id); }}
+            <div
+              key={dev.id}
+              onClick={() => { setSelected(dev); runAnalysis(dev.id); }}
               className="ds-card ds-card-interactive"
-              style={{ padding:'14px', border: sel ? '1px solid rgba(45,127,249,0.5)' : undefined, boxShadow: sel ? '0 0 0 1px rgba(45,127,249,0.15), 0 0 20px rgba(45,127,249,0.1)' : undefined }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-                <div style={{ width:34, height:34, borderRadius:8, background: sel ? 'rgba(45,127,249,0.2)' : 'rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid ${sel ? 'rgba(45,127,249,0.4)' : 'rgba(255,255,255,0.08)'}` }}>
-                  <HardDrive size={15} color={sel ? '#2d7ff9' : '#4d5a6a'} />
+              style={{
+                padding: '16px 18px',
+                border: sel ? '2px solid #FF7E5F' : '1px solid var(--c-border)',
+                boxShadow: sel ? '0 8px 24px rgba(255, 126, 95, 0.18)' : undefined,
+                background: '#FFFFFF',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: sel ? 'rgba(255, 126, 95, 0.12)' : '#FAF8F5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `1px solid ${sel ? 'rgba(255, 126, 95, 0.3)' : 'var(--c-border)'}`,
+                  }}
+                >
+                  <HardDrive size={18} color={sel ? '#FF7E5F' : '#94A3B8'} />
                 </div>
                 <div>
-                  <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:700, fontSize:14, color:'#f0f4ff', lineHeight:1 }}>{dev.name}</div>
-                  <div style={{ fontSize:10, color:'#8b96a8', marginTop:3 }}>{dev.storage_type} · {dev.filesystem}</div>
+                  <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 14, color: '#1E2229', lineHeight: 1.2 }}>
+                    {dev.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#5E6676', marginTop: 3 }}>
+                    {dev.storage_type} · {dev.filesystem}
+                  </div>
                 </div>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#8b96a8', borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#5E6676', borderTop: '1px solid var(--c-border)', paddingTop: 10 }}>
                 <span>Capacity</span>
-                <span style={{ fontWeight:700, color:'#f0f4ff' }}>{(dev.total_capacity_bytes/1e9).toFixed(1)} GB</span>
+                <span style={{ fontWeight: 700, color: '#1E2229' }}>{(dev.total_capacity_bytes / 1e9).toFixed(1)} GB</span>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* SMART */}
+      {/* S.M.A.R.T. Diagnostics Card */}
       {selected && (
-        <div className="ds-card" style={{ padding:'18px 20px' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-            <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:800, fontSize:16, textTransform:'uppercase', letterSpacing:'0.04em', color:'#f0f4ff', display:'flex', alignItems:'center', gap:8 }}>
-              <Activity size={15} color="#22c55e" /> S.M.A.R.T. Diagnostics
+        <div className="ds-card" style={{ padding: '22px 26px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, color: '#1E2229', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Activity size={16} color="#16A34A" /> S.M.A.R.T. Health Diagnostics
             </div>
-            <span className="ds-badge ds-badge-green">Health Grade: A+</span>
+            <span className="ds-badge" style={{ background: '#E6EFFB', color: '#2B579A', border: '1px solid #D0E0F7' }}>
+              Health Grade: A+
+            </span>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {SMART.map((m) => (
-              <div key={m.label} style={{ padding:'12px 14px', borderRadius:9, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
-                  <m.icon size={12} color={m.color} />
-                  <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:10, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'#8b96a8' }}>{m.label}</span>
+              <div
+                key={m.label}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 14,
+                  background: '#FAF8F5',
+                  border: '1px solid var(--c-border)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <m.icon size={14} color={m.color} />
+                  <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676' }}>
+                    {m.label}
+                  </span>
                 </div>
-                <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:900, fontSize:22, color:m.color }}>{m.value}</div>
-                <div style={{ fontSize:10, color:'#4d5a6a', marginTop:3 }}>{m.sub}</div>
+                <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 24, color: m.color }}>
+                  {m.value}
+                </div>
+                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>{m.sub}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Analysis panel */}
+      {/* Architecture & AI Recommendation Row */}
       {selected && profile && (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:14 }}>
-          <div className="ds-card" style={{ padding:'18px 20px' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:800, fontSize:16, textTransform:'uppercase', color:'#f0f4ff' }}>
-                Architecture — <span style={{ color:'#2d7ff9' }}>{selected.name}</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 18 }}>
+          {/* Main Specs Card */}
+          <div className="ds-card" style={{ padding: '22px 26px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, color: '#1E2229' }}>
+                Architecture &amp; FTL Profile — <span style={{ color: '#FF7E5F' }}>{selected.name}</span>
               </div>
-              <span className="ds-badge" style={{ background:`${profile.risk_level==='LOW'?'rgba(34,197,94,0.1)':profile.risk_level==='MEDIUM'?'rgba(245,158,11,0.1)':'rgba(239,68,68,0.1)'}`, color:profile.risk_level==='LOW'?'#4ade80':profile.risk_level==='MEDIUM'?'#fbbf24':'#f87171', border:`1px solid ${profile.risk_level==='LOW'?'rgba(34,197,94,0.25)':profile.risk_level==='MEDIUM'?'rgba(245,158,11,0.25)':'rgba(239,68,68,0.25)'}` }}>
-                {profile.risk_level} Risk
+              <span
+                className="ds-badge"
+                style={{
+                  background: profile.risk_level === 'LOW' ? 'rgba(22,163,74,0.08)' : 'rgba(217,119,6,0.08)',
+                  color: profile.risk_level === 'LOW' ? '#16A34A' : '#D97706',
+                  border: `1px solid ${profile.risk_level === 'LOW' ? 'rgba(22,163,74,0.22)' : 'rgba(217,119,6,0.22)'}`,
+                }}
+              >
+                {profile.risk_level} Residual Risk
               </span>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8, marginBottom:14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
               {[
-                ['Class', profile.storage_type, '#2d7ff9'],
-                ['FS', selected.filesystem, '#f0f4ff'],
-                ['TRIM', profile.trim_active ? 'ENABLED' : 'DISABLED', profile.trim_active ? '#22c55e' : '#ef4444'],
-                ['FTL', profile.ftl_warning ? 'ENFORCED' : 'N/A', profile.ftl_warning ? '#f59e0b' : '#8b96a8'],
-              ].map(([k,v,c]) => (
-                <div key={k as string} style={{ padding:'10px 12px', borderRadius:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)' }}>
-                  <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:9, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:'#4d5a6a', marginBottom:5 }}>{k as string}</div>
-                  <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:800, fontSize:16, color:c as string }}>{v as string}</div>
+                ['Class', profile.storage_type, '#FF7E5F'],
+                ['FS', selected.filesystem, '#1E2229'],
+                ['TRIM', profile.trim_active ? 'ENABLED' : 'DISABLED', profile.trim_active ? '#16A34A' : '#DC2626'],
+                ['FTL Wear', profile.ftl_warning ? 'ENFORCED' : 'N/A', profile.ftl_warning ? '#D97706' : '#5E6676'],
+              ].map(([k, v, c]) => (
+                <div
+                  key={k as string}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 12,
+                    background: '#FAF8F5',
+                    border: '1px solid var(--c-border)',
+                  }}
+                >
+                  <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 6 }}>
+                    {k as string}
+                  </div>
+                  <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, color: c as string }}>
+                    {v as string}
+                  </div>
                 </div>
               ))}
             </div>
 
             {profile.ftl_warning && (
-              <div style={{ padding:'12px 14px', borderRadius:9, background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)', marginBottom:12, display:'flex', gap:10 }}>
-                <AlertTriangle size={14} color="#f59e0b" style={{ flexShrink:0, marginTop:2 }} />
-                <div style={{ fontSize:12, color:'#fbbf24', lineHeight:1.6 }}>
-                  Wear-leveling prevents standard multi-pass overwrites from reaching over-provisioned NAND cells. Controller-level purge mandatory.
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 14,
+                  background: 'rgba(217, 119, 6, 0.08)',
+                  border: '1px solid rgba(217, 119, 6, 0.22)',
+                  marginBottom: 14,
+                  display: 'flex',
+                  gap: 12,
+                }}
+              >
+                <AlertTriangle size={16} color="#D97706" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ fontSize: 13, color: '#B45309', lineHeight: 1.6 }}>
+                  Flash wear-leveling prevents standard multi-pass overwrites from reaching hidden over-provisioned NAND blocks. Controller-level cryptographic purge is mandatory.
                 </div>
               </div>
             )}
 
-            <div style={{ fontSize:12, color:'#8b96a8', lineHeight:1.7, padding:'10px 14px', borderRadius:8, background:'rgba(45,127,249,0.06)', border:'1px solid rgba(45,127,249,0.15)' }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: '#5E6676',
+                lineHeight: 1.7,
+                padding: '14px 16px',
+                borderRadius: 14,
+                background: '#FAF8F5',
+                border: '1px solid var(--c-border)',
+              }}
+            >
               {profile.technical_rationale}
             </div>
 
-            <div style={{ display:'flex', gap:8, marginTop:14 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               <button onClick={() => setActiveTab('recovery')} className="ds-btn ds-btn-ghost ds-btn-sm">
-                Recovery Scan <ArrowRight size={12} />
+                Run Recovery Scan <ArrowRight size={13} />
               </button>
-              <button onClick={() => setActiveTab('erasure')} className="ds-btn ds-btn-ghost ds-btn-sm">
-                Configure Erasure <ArrowRight size={12} />
+              <button onClick={() => setActiveTab('erasure')} className="ds-btn ds-btn-primary ds-btn-sm">
+                Configure Secure Erasure <ArrowRight size={13} />
               </button>
             </div>
           </div>
 
-          {/* AI Advisor */}
-          <div className="ds-card-glow" style={{ padding:'18px 20px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
-              <Sparkles size={15} color="#2d7ff9" />
-              <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:800, fontSize:14, textTransform:'uppercase', letterSpacing:'0.06em', color:'#f0f4ff' }}>AI Advisor</span>
+          {/* AI Advisor Card */}
+          <div
+            className="ds-card"
+            style={{
+              padding: '22px 24px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid var(--c-border)' }}>
+              <Sparkles size={16} color="#FF7E5F" />
+              <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 14, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#1E2229' }}>
+                AI Advisor
+              </span>
             </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:14, fontSize:12 }}>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 13 }}>
               {[
-                { label:'Recommended Protocol', val:profile.recommended_strategy, col:'#60a5fa' },
-                { label:'Compliance Standard',  val:profile.compliance_standard||'NIST SP 800-88', col:'#4ade80' },
+                { label: 'Recommended Protocol', val: profile.recommended_strategy, col: '#FF7E5F' },
+                { label: 'Compliance Standard', val: profile.compliance_standard || 'NIST SP 800-88', col: '#16A34A' },
               ].map((r) => (
                 <div key={r.label}>
-                  <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:9, fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'#4d5a6a', marginBottom:4 }}>{r.label}</div>
-                  <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:800, fontSize:14, color:r.col }}>{r.val}</div>
+                  <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 4 }}>
+                    {r.label}
+                  </div>
+                  <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 14, color: r.col }}>
+                    {r.val}
+                  </div>
                 </div>
               ))}
               <div>
-                <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:9, fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'#4d5a6a', marginBottom:6 }}>AI Confidence</div>
-                <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontWeight:900, fontSize:32, color:'#f0f4ff' }}>{Math.round(profile.ai_confidence*100)}%</div>
-                <div className="ds-progress" style={{ marginTop:6 }}>
-                  <div className="ds-progress-fill" style={{ width:`${Math.round(profile.ai_confidence*100)}%` }} />
+                <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 6 }}>
+                  AI Confidence
+                </div>
+                <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 36, color: '#1E2229', lineHeight: 1 }}>
+                  {Math.round(profile.ai_confidence * 100)}%
+                </div>
+                <div className="ds-progress" style={{ marginTop: 10 }}>
+                  <div className="ds-progress-fill" style={{ width: `${Math.round(profile.ai_confidence * 100)}%` }} />
                 </div>
               </div>
             </div>

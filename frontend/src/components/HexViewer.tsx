@@ -62,62 +62,95 @@ export const HexViewer: React.FC<HexViewerProps> = ({
   };
 
   return (
-    <div className="cyber-card p-5 border border-cyan-500/30 bg-[#040814] font-mono text-xs space-y-4">
+    <div
+      style={{
+        padding: 20,
+        borderRadius: 14,
+        background: '#FFFFFF',
+        border: '1px solid var(--c-border)',
+        boxShadow: '0 10px 30px -4px rgba(30, 34, 41, 0.05)',
+        fontFamily: 'JetBrains Mono, monospace',
+        fontSize: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
+    >
       {/* Hex Viewer Header Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-2 rounded-xl bg-[#0f1b38] text-cyan-400 border border-cyan-500/30">
-            <Binary className="w-4 h-4" />
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14, borderBottom: '1px solid var(--c-border)', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              padding: 8,
+              borderRadius: 10,
+              background: 'rgba(255, 126, 95, 0.12)',
+              color: '#FF7E5F',
+              border: '1px solid rgba(255, 126, 95, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Binary size={16} />
           </div>
           <div>
-            <div className="font-bold text-white text-xs flex items-center space-x-2">
+            <div style={{ fontWeight: 700, color: '#1E2229', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span>{fileName}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30">
+              <span className="ds-badge" style={{ background: '#E6EFFB', color: '#2B579A', border: '1px solid #D0E0F7', fontSize: 10 }}>
                 {detectedFormat} Signature
               </span>
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">
-              512-Byte Raw Sector Inspector &bull; 16-Byte Row Alignment
+            <div style={{ fontSize: 11, color: '#5E6676', marginTop: 2, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              512-Byte Raw Sector Inspector · 16-Byte Row Alignment
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ color: '#94A3B8', position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
               placeholder="Search Hex / ASCII..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#0b1329] border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:border-cyan-400 focus:outline-none w-44"
+              className="ds-input"
+              style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 6, paddingBottom: 6, fontSize: 12, width: 180 }}
             />
           </div>
 
           <button
             onClick={handleCopyHex}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#0f1b38] hover:bg-[#16254c] text-slate-300 hover:text-white border border-slate-700 text-xs transition-colors"
+            className="ds-btn ds-btn-ghost ds-btn-sm"
           >
-            {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
+            {copied ? <CheckCircle2 size={13} color="#16A34A" /> : <Copy size={13} color="#FF7E5F" />}
             <span>{copied ? 'Copied' : 'Copy Dump'}</span>
           </button>
         </div>
       </div>
 
       {/* Hex Dump Matrix */}
-      <div className="overflow-x-auto p-3.5 rounded-xl bg-[#02050e] border border-slate-800 shadow-inner">
-        <div className="min-w-[620px] text-[11px] leading-relaxed">
+      <div
+        style={{
+          overflowX: 'auto',
+          padding: 14,
+          borderRadius: 12,
+          background: '#FAF8F5',
+          border: '1px solid var(--c-border)',
+        }}
+      >
+        <div style={{ minWidth: 620, fontSize: 11, lineHeight: 1.8 }}>
           {/* Column Index Header */}
-          <div className="flex text-slate-500 font-bold border-b border-slate-800/80 pb-1 mb-2 select-none">
-            <span className="w-24">OFFSET</span>
-            <span className="flex-1 tracking-widest">
+          <div style={{ display: 'flex', color: '#94A3B8', fontWeight: 700, borderBottom: '1px solid var(--c-border)', paddingBottom: 4, marginBottom: 8, userSelect: 'none' }}>
+            <span style={{ width: 90 }}>OFFSET</span>
+            <span style={{ flex: 1, letterSpacing: '0.12em' }}>
               00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
             </span>
-            <span className="w-40 pl-4">DECODED ASCII</span>
+            <span style={{ width: 150, paddingLeft: 16 }}>DECODED ASCII</span>
           </div>
 
           {/* Rows */}
-          <div className="space-y-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {rows.map((row, idx) => {
               const isFirstRow = idx === 0;
               const matchesSearch =
@@ -128,24 +161,32 @@ export const HexViewer: React.FC<HexViewerProps> = ({
               return (
                 <div
                   key={row.offset}
-                  className={`flex items-center hover:bg-[#0d1733] px-1 py-0.5 rounded transition-colors ${
-                    matchesSearch ? 'bg-cyan-950/70 text-cyan-300 ring-1 ring-cyan-400' : ''
-                  }`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '2px 4px',
+                    borderRadius: 6,
+                    background: matchesSearch ? 'rgba(255, 126, 95, 0.15)' : 'transparent',
+                    border: matchesSearch ? '1px solid #FF7E5F' : '1px solid transparent',
+                  }}
                 >
-                  <span className="w-24 text-cyan-500 font-bold select-none">{row.offset}</span>
-                  <div className="flex-1 flex space-x-1">
+                  <span style={{ width: 90, color: '#FF7E5F', fontWeight: 700, userSelect: 'none' }}>{row.offset}</span>
+                  <div style={{ flex: 1, display: 'flex', gap: 6 }}>
                     {row.hex.map((h, bIdx) => {
                       const isMagicByte = isFirstRow && bIdx < 4;
                       return (
                         <span
                           key={bIdx}
-                          className={`inline-block w-5 text-center ${
-                            isMagicByte
-                              ? 'text-emerald-400 font-black bg-emerald-950/40 rounded px-0.5 border border-emerald-500/40'
-                              : h === '00'
-                              ? 'text-slate-600'
-                              : 'text-slate-300'
-                          } ${bIdx === 7 ? 'mr-3' : ''}`}
+                          style={{
+                            display: 'inline-block',
+                            width: 20,
+                            textAlign: 'center',
+                            fontWeight: isMagicByte ? 800 : 500,
+                            color: isMagicByte ? '#16A34A' : h === '00' ? '#CBD5E1' : '#1E2229',
+                            background: isMagicByte ? 'rgba(22,163,74,0.1)' : 'transparent',
+                            borderRadius: 4,
+                            marginRight: bIdx === 7 ? 10 : 0,
+                          }}
                           title={`Byte 0x${(initialOffset + idx * 16 + bIdx).toString(16).toUpperCase()}: 0x${h}`}
                         >
                           {h}
@@ -153,7 +194,7 @@ export const HexViewer: React.FC<HexViewerProps> = ({
                       );
                     })}
                   </div>
-                  <span className="w-40 pl-4 text-amber-300/80 select-none border-l border-slate-800">
+                  <span style={{ width: 150, paddingLeft: 16, color: '#5E6676', userSelect: 'none', borderLeft: '1px solid var(--c-border)' }}>
                     {row.ascii}
                   </span>
                 </div>
@@ -163,14 +204,14 @@ export const HexViewer: React.FC<HexViewerProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-        <div className="flex items-center space-x-3">
-          <span className="flex items-center space-x-1">
-            <span className="w-2 h-2 rounded bg-emerald-400"></span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#5E6676', paddingTop: 2, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#16A34A' }}></span>
             <span>Identified Magic-Byte Header</span>
           </span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2 h-2 rounded bg-slate-700"></span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#CBD5E1' }}></span>
             <span>0x00 Null Bytes</span>
           </span>
         </div>

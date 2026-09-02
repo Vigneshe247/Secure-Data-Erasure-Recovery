@@ -124,6 +124,25 @@ export interface AuditLog {
   sha256_checksum: string;
 }
 
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  user_id?: string;
+  username: string;
+  role?: string;
+  user_role?: string;
+  action?: string;
+  action_type: string;
+  target_resource: string;
+  operation_id?: string;
+  ip_address: string;
+  status?: string;
+  detail?: string;
+  details_json?: string;
+  sha256_checksum?: string;
+  sha256_chain?: string;
+}
+
 export interface SecurityReport {
   id: string;
   report_number: string;
@@ -136,6 +155,18 @@ export interface SecurityReport {
   ai_risk_assessment?: string;
   pdf_file_path?: string;
   created_at: string;
+}
+
+export interface Report {
+  id: string;
+  title: string;
+  report_type: string;
+  status: string;
+  generated_at: string;
+  generated_by: string;
+  sha256_hash?: string;
+  standards_covered?: string[];
+  operations_covered?: any[];
 }
 
 export interface DashboardMetrics {

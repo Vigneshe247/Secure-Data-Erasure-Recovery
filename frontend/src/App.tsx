@@ -20,10 +20,10 @@ const MainLayout: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ minHeight:'100vh', background:'#0a0c10', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ minHeight:'100vh', background:'var(--c-bg)', display:'flex', alignItems:'center', justifyContent:'center' }}>
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
-          <div style={{ width:32, height:32, border:'2px solid #2d7ff9', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-          <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:12, fontWeight:700, letterSpacing:'0.15em', textTransform:'uppercase', color:'#8b96a8' }}>Initializing DataShield</span>
+          <div style={{ width:36, height:36, border:'3px solid rgba(255,126,95,0.25)', borderTopColor:'#FF7E5F', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+          <span style={{ fontFamily:'Plus Jakarta Sans,sans-serif', fontSize:12, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--c-text-muted)' }}>Initializing DataShield</span>
         </div>
       </div>
     );
@@ -34,7 +34,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'#0a0c10', color:'#f0f4ff', display:'flex', flexDirection:'column' }}>
+    <div style={{ minHeight:'100vh', background:'var(--c-bg)', color:'var(--c-text)', display:'flex', flexDirection:'column' }}>
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <div style={{ display:'flex', flex:1 }}>
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />

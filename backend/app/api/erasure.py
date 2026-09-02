@@ -12,6 +12,8 @@ from backend.app.schemas.schemas import (
     ErasureApproveRequest,
     ErasureExecuteRequest,
     ErasureOperationResponse,
+    FileShredRequest,
+    FileShredResponse,
 )
 from backend.app.services.erasure_engine import ErasureEngineService
 from backend.app.services.storage_analyzer import StorageAnalyzerService
@@ -135,3 +137,35 @@ async def get_erasure_operation(
     if not op:
         raise HTTPException(status_code=404, detail="Erasure operation not found")
     return op
+
+
+@router.post("/shred", response_model=FileShredResponse)
+async def shred_file_target(
+    req: FileShredRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("erasure.execute"))
+):
+    try:
+        res = await ErasureEngineService.shred_target(db=db, req=req, user=current_user)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/resolve-file")
+async def resolve_file_path(path: str):
+    resolved = ErasureEngineService.resolve_target_file(path)
+    if resolved and resolved.exists():
+        return {
+            "found": True,
+            "resolved_path": str(resolved),
+            "size_bytes": resolved.stat().st_size,
+            "is_local": True
+        }
+    return {
+        "found": False,
+        "resolved_path": path,
+        "size_bytes": 0,
+        "is_local": False
+    }
+

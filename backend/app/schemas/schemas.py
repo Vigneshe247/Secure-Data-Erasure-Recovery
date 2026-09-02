@@ -197,6 +197,33 @@ class ErasureOperationResponse(BaseModel):
         from_attributes = True
 
 
+class FileShredRequest(BaseModel):
+    target_path: Optional[str] = None
+    method: str = "dod3"
+    passes: Optional[int] = 3
+    wipe_slack: bool = True
+    zero_inode: bool = True
+    obfuscate_name: bool = True
+    verify_entropy: bool = True
+    audit_note: Optional[str] = None
+    raw_payload: Optional[str] = None
+    data_format: Optional[str] = "plaintext"
+
+
+class FileShredResponse(BaseModel):
+    success: bool
+    target_path: str
+    target_type: str
+    original_size_bytes: int
+    passes_executed: int
+    method_name: str
+    deleted_from_disk: bool
+    verified_entropy: float
+    sha256_hash: str
+    message: str
+    telemetry_logs: List[str]
+
+
 # --- Verification Schemas ---
 class VerificationStartRequest(BaseModel):
     operation_id: str

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Bot, Send, User, ShieldAlert, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Sparkles, Bot, Send, User, ShieldAlert, CheckCircle2, HelpCircle, X } from 'lucide-react';
 
 interface AIAssistantModalProps {
   isOpen: boolean;
@@ -74,26 +74,57 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 font-mono">
-      <div className="cyber-card max-w-2xl w-full p-6 border border-cyan-500/40 shadow-2xl flex flex-col h-[600px] bg-[#070d1d]">
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(30, 34, 41, 0.65)', backdropFilter: 'blur(6px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div
+        className="ds-card"
+        style={{
+          maxWidth: 680,
+          width: '100%',
+          padding: 24,
+          height: 620,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 16,
+        }}
+      >
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)' }} />
+
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center space-x-2 text-cyan-400 font-bold text-sm">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14, borderBottom: '1px solid var(--c-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#FF7E5F', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 15 }}>
+            <Sparkles size={18} />
             <span>DATASHIELD AI CYBERSECURITY COPILOT</span>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xs">
-            ✕ Close
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}>
+            <X size={18} />
           </button>
         </div>
 
         {/* Preset Queries */}
-        <div className="py-2.5 flex flex-wrap gap-1.5 border-b border-slate-800">
+        <div style={{ padding: '12px 0', display: 'flex', flexWrap: 'wrap', gap: 8, borderBottom: '1px solid var(--c-border)' }}>
           {promptPresets.map((p, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(p)}
-              className="text-[10px] px-2.5 py-1 rounded-lg bg-[#0b1329] hover:bg-[#142247] text-cyan-300 border border-cyan-500/30 transition-all text-left truncate max-w-[280px]"
+              style={{
+                fontSize: 11,
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                fontWeight: 600,
+                padding: '4px 10px',
+                borderRadius: 12,
+                background: '#E6EFFB',
+                color: '#2B579A',
+                border: '1px solid #D0E0F7',
+                cursor: 'pointer',
+                textAlign: 'left',
+                maxWidth: 280,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+              }}
             >
               {p}
             </button>
@@ -101,59 +132,96 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onCl
         </div>
 
         {/* Chat Thread */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3 text-xs leading-relaxed">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 0', display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, lineHeight: 1.6 }}>
           {messages.map((m, idx) => (
             <div
               key={idx}
-              className={`flex items-start space-x-2.5 ${
-                m.sender === 'user' ? 'justify-end' : 'justify-start'
-              }`}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                justifyContent: m.sender === 'user' ? 'flex-end' : 'flex-start',
+              }}
             >
               {m.sender === 'ai' && (
-                <div className="p-2 rounded-xl bg-[#0f1b38] text-cyan-400 border border-cyan-500/30 flex-shrink-0">
-                  <Bot className="w-4 h-4" />
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: 'rgba(255, 126, 95, 0.12)',
+                    color: '#FF7E5F',
+                    border: '1px solid rgba(255, 126, 95, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Bot size={16} />
                 </div>
               )}
               <div
-                className={`max-w-[80%] p-3.5 rounded-2xl ${
-                  m.sender === 'user'
-                    ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md shadow-cyan-950'
-                    : 'bg-[#0b1329] border border-slate-800 text-slate-200'
-                }`}
+                style={{
+                  maxWidth: '82%',
+                  padding: '12px 16px',
+                  borderRadius: 14,
+                  background: m.sender === 'user' ? 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)' : '#FAF8F5',
+                  color: m.sender === 'user' ? '#FFFFFF' : '#1E2229',
+                  border: m.sender === 'user' ? 'none' : '1px solid var(--c-border)',
+                  boxShadow: m.sender === 'user' ? '0 4px 14px rgba(255,126,95,0.25)' : 'none',
+                }}
               >
-                <div className="whitespace-pre-line">{m.text}</div>
-                <div className="text-[9px] text-slate-400 mt-1.5 text-right">{m.time}</div>
+                <div style={{ whiteSpace: 'pre-line' }}>{m.text}</div>
+                <div style={{ fontSize: 10, color: m.sender === 'user' ? 'rgba(255,255,255,0.8)' : '#94A3B8', marginTop: 6, textAlign: 'right' }}>
+                  {m.time}
+                </div>
               </div>
               {m.sender === 'user' && (
-                <div className="p-2 rounded-xl bg-[#0f1b38] text-slate-300 border border-slate-700 flex-shrink-0">
-                  <User className="w-4 h-4" />
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: '#FAF8F5',
+                    color: '#5E6676',
+                    border: '1px solid var(--c-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <User size={16} />
                 </div>
               )}
             </div>
           ))}
           {thinking && (
-            <div className="flex items-center space-x-2 text-cyan-400 text-xs py-2">
-              <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#FF7E5F', fontSize: 12, padding: '8px 0' }}>
+              <div style={{ width: 14, height: 14, border: '2px solid #FF7E5F', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               <span>Synthesizing NIST SP 800-88 Technical Rationale...</span>
             </div>
           )}
         </div>
 
         {/* Input Bar */}
-        <div className="pt-3 border-t border-slate-800 flex items-center space-x-2">
+        <div style={{ paddingTop: 14, borderTop: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask AI Copilot regarding storage, FTL wear leveling, or standards..."
-            className="flex-1 bg-[#030712] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-cyan-400 focus:outline-none"
+            className="ds-input"
+            style={{ flex: 1, padding: '10px 16px', fontSize: 13 }}
           />
           <button
             onClick={() => handleSend()}
-            className="p-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white transition-all shadow-md shadow-cyan-500/25"
+            className="ds-btn ds-btn-primary"
+            style={{ padding: '10px 18px' }}
           >
-            <Send className="w-4 h-4" />
+            <Send size={15} />
           </button>
         </div>
       </div>

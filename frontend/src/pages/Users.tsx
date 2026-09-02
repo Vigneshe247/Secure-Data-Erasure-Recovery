@@ -63,11 +63,11 @@ export const Users: React.FC = () => {
   };
 
   const roleAccents: Record<string, string> = {
-    admin: '#ef4444',
-    security_admin: '#2d7ff9',
-    forensic_analyst: '#f59e0b',
-    auditor: '#22c55e',
-    demo_user: '#818cf8',
+    admin:            '#EF4444',
+    security_admin:   '#FF7E5F',
+    forensic_analyst: '#D97706',
+    auditor:          '#16A34A',
+    demo_user:        '#2563EB',
   };
 
   return (
@@ -78,7 +78,7 @@ export const Users: React.FC = () => {
           <div className="ds-section-label" style={{ justifyContent: 'flex-start', marginBottom: 6 }}>
             Role-Based Access Control &amp; User Directory
           </div>
-          <h1 style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: 32, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#f0f4ff' }}>
+          <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', color: '#1E2229' }}>
             User Management
           </h1>
         </div>
@@ -87,11 +87,11 @@ export const Users: React.FC = () => {
           onClick={() => setIsModalOpen(true)}
           className="ds-btn ds-btn-primary"
         >
-          <UserPlus size={14} /> Provision New User
+          <UserPlus size={15} /> Provision New User
         </button>
       </div>
 
-      {/* Users Table */}
+      {/* Users Table Card */}
       <div className="ds-card" style={{ overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table className="ds-table">
@@ -104,36 +104,62 @@ export const Users: React.FC = () => {
             </thead>
             <tbody>
               {userList.map((u) => {
-                const accent = roleAccents[u.role] || '#8b96a8';
+                const accent = roleAccents[u.role] || '#5E6676';
                 return (
                   <tr key={u.id}>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 6, background: `${accent}18`, border: `1px solid ${accent}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 800, fontSize: 13 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
+                            background: `${accent}14`,
+                            border: `1px solid ${accent}30`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: accent,
+                            fontFamily: 'Plus Jakarta Sans, sans-serif',
+                            fontWeight: 800,
+                            fontSize: 14,
+                          }}
+                        >
                           {u.username[0].toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 14, color: '#f0f4ff' }}>
+                          <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 14, color: '#1E2229' }}>
                             {u.username}
                           </div>
                           {u.full_name && (
-                            <div style={{ fontSize: 11, color: '#8b96a8' }}>{u.full_name}</div>
+                            <div style={{ fontSize: 11, color: '#94A3B8' }}>{u.full_name}</div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td style={{ fontSize: 12, color: '#8b96a8' }}>{u.email}</td>
+                    <td style={{ fontSize: 13, color: '#5E6676' }}>{u.email}</td>
                     <td>
-                      <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 4, background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>
+                      <span
+                        style={{
+                          fontFamily: 'Plus Jakarta Sans, sans-serif',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '3px 10px',
+                          borderRadius: 12,
+                          background: `${accent}14`,
+                          color: accent,
+                          border: `1px solid ${accent}30`,
+                        }}
+                      >
                         {u.role.replace(/_/g, ' ').toUpperCase()}
                       </span>
                     </td>
                     <td>
-                      <span className="ds-badge ds-badge-green">
-                        <span className="ds-dot ds-dot-green" style={{ width: 5, height: 5 }} /> ACTIVE
+                      <span className="ds-badge" style={{ background: 'rgba(22,163,74,0.08)', color: '#16A34A', border: '1px solid rgba(22,163,74,0.22)' }}>
+                        <span className="ds-dot ds-dot-green" style={{ width: 6, height: 6 }} /> ACTIVE
                       </span>
                     </td>
-                    <td style={{ fontSize: 12, color: '#4d5a6a' }}>
+                    <td style={{ fontSize: 12, color: '#94A3B8' }}>
                       {new Date(u.created_at).toLocaleDateString()}
                     </td>
                     <td>
@@ -141,18 +167,18 @@ export const Users: React.FC = () => {
                         onClick={() => handleDeleteUser(u.id, u.username)}
                         style={{
                           background: 'none',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 6,
-                          padding: '5px 8px',
-                          color: '#4d5a6a',
+                          border: '1px solid var(--c-border)',
+                          borderRadius: 10,
+                          padding: '6px 10px',
+                          color: '#94A3B8',
                           cursor: 'pointer',
                           transition: 'all 0.15s',
                         }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#ef4444'; (e.currentTarget as HTMLElement).style.color = '#ef4444'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#4d5a6a'; }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#EF4444'; (e.currentTarget as HTMLElement).style.color = '#EF4444'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--c-border)'; (e.currentTarget as HTMLElement).style.color = '#94A3B8'; }}
                         title="Delete User"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     </td>
                   </tr>
@@ -165,23 +191,24 @@ export const Users: React.FC = () => {
 
       {/* Provision User Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div className="ds-card" style={{ maxWidth: 440, width: '100%', padding: 24, borderTop: '3px solid #2d7ff9' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30, 34, 41, 0.65)', backdropFilter: 'blur(6px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div className="ds-card" style={{ maxWidth: 460, width: '100%', padding: 28, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid var(--c-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <UserPlus size={16} color="#2d7ff9" />
-                <h2 style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 800, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#f0f4ff' }}>
+                <UserPlus size={18} color="#FF7E5F" />
+                <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 17, color: '#1E2229' }}>
                   Provision User Account
                 </h2>
               </div>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8b96a8' }}>
-                <X size={16} />
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}>
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ display: 'block', fontFamily: 'Barlow Condensed, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b96a8', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676', marginBottom: 6 }}>
                   Username
                 </label>
                 <input
@@ -195,7 +222,7 @@ export const Users: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontFamily: 'Barlow Condensed, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b96a8', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676', marginBottom: 6 }}>
                   Email Address
                 </label>
                 <input
@@ -209,7 +236,7 @@ export const Users: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontFamily: 'Barlow Condensed, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b96a8', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676', marginBottom: 6 }}>
                   Full Name
                 </label>
                 <input
@@ -222,7 +249,7 @@ export const Users: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontFamily: 'Barlow Condensed, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b96a8', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676', marginBottom: 6 }}>
                   Initial Password
                 </label>
                 <input
@@ -236,14 +263,14 @@ export const Users: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontFamily: 'Barlow Condensed, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b96a8', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676', marginBottom: 6 }}>
                   Assigned RBAC Role
                 </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as Role)}
                   className="ds-input"
-                  style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 13, fontWeight: 700 }}
+                  style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 13, fontWeight: 700 }}
                 >
                   <option value="admin">Administrator (Full Privileges)</option>
                   <option value="security_admin">IT / Security Administrator</option>
@@ -253,7 +280,7 @@ export const Users: React.FC = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 10 }}>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 14 }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
