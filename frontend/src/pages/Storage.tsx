@@ -24,8 +24,11 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
   const [profile, setProfile] = useState<StorageProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState<string | null>(null);
+
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await api.getStorageDevices();
       setDevices(data);
@@ -33,6 +36,8 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
         setSelected(data[0]);
         runAnalysis(data[0].id);
       }
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -55,6 +60,32 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
         <span style={{ color: '#5E6676', fontSize: 13, fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Scanning hardware topology
         </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="ds-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ padding: 16, background: '#FEE2E2', color: '#DC2626', borderRadius: 12, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <strong>Error loading storage devices:</strong> {error}
+        </div>
+        <button onClick={load} className="ds-btn ds-btn-primary" style={{ alignSelf: 'flex-start' }}>
+          <RefreshCw size={14} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (devices.length === 0) {
+    return (
+      <div className="ds-page" style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          No storage devices detected.
+        </div>
+        <button onClick={load} className="ds-btn ds-btn-primary">
+          <RefreshCw size={14} /> Rescan
+        </button>
       </div>
     );
   }
