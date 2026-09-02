@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── DESIGN TOKENS ───────────────────────────────────────────────── */
+:root {
+  --c-bg:        #0a0c10;
+  --c-bg-card:   #111318;
+  --c-bg-surface:#161921;
+  --c-bg-elevated:#1d2129;
+  --c-border:    rgba(255,255,255,0.08);
+  --c-border-strong: rgba(255,255,255,0.14);
+
+  --c-blue:      #2d7ff9;
+  --c-blue-glow: rgba(45,127,249,0.25);
+  --c-teal:      #00d4c8;
+  --c-teal-glow: rgba(0,212,200,0.2);
+  --c-green:     #22c55e;
+  --c-amber:     #f59e0b;
+  --c-red:       #ef4444;
+  --c-indigo:    #818cf8;
+
+  --c-text:      #f0f4ff;
+  --c-text-muted:#8b96a8;
+  --c-text-dim:  #4d5a6a;
+}
+
+*  { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ─── CUSTOM SCROLLBAR ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--c-bg); }
+::-webkit-scrollbar-thumb { background: var(--c-blue); border-radius: 4px; }
+
+/* ─── HEADING SYSTEM ─────────────────────────────────────────────── */
+.font-display { font-family: 'Barlow Condensed', sans-serif; }
+.font-mono-ds { font-family: 'JetBrains Mono', monospace; }
+
+h1, h2, h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: 0.02em; }
+
+/* ─── CARD SYSTEM ────────────────────────────────────────────────── */
+.ds-card {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.ds-card:hover {
+  border-color: rgba(45,127,249,0.3);
+  box-shadow: 0 0 0 1px rgba(45,127,249,0.12), 0 8px 32px rgba(0,0,0,0.5);
+}
+.ds-card-interactive:hover {
+  transform: translateY(-2px);
+  cursor: pointer;
+}
+
+.ds-card-glow {
+  background: var(--c-bg-card);
+  border: 1px solid rgba(45,127,249,0.2);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(45,127,249,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* ─── BUTTON SYSTEM ──────────────────────────────────────────────── */
+.ds-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; border: none; transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.ds-btn-primary {
+  background: linear-gradient(135deg, #2d7ff9, #1a5fd4);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(45,127,249,0.35);
+}
+.ds-btn-primary:hover {
+  background: linear-gradient(135deg, #4090ff, #2268e8);
+  box-shadow: 0 4px 24px rgba(45,127,249,0.5);
+  transform: translateY(-1px);
+}
+.ds-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--c-border-strong);
+  color: var(--c-text-muted);
+}
+.ds-btn-ghost:hover {
+  border-color: var(--c-blue);
+  color: var(--c-text);
+  background: rgba(45,127,249,0.08);
+}
+.ds-btn-danger {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(220,38,38,0.35);
+}
+.ds-btn-danger:hover {
+  box-shadow: 0 4px 24px rgba(220,38,38,0.5);
+  transform: translateY(-1px);
+}
+.ds-btn-sm { padding: 6px 14px; font-size: 11px; border-radius: 6px; }
+.ds-btn-lg { padding: 12px 28px; font-size: 15px; border-radius: 10px; }
+
+/* ─── BADGE SYSTEM ────────────────────────────────────────────────── */
+.ds-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px; border: 1px solid transparent;
+}
+.ds-badge-blue    { background: rgba(45,127,249,0.12); color: #60a5fa; border-color: rgba(45,127,249,0.25); }
+.ds-badge-teal    { background: rgba(0,212,200,0.1);  color: #2dd4bf; border-color: rgba(0,212,200,0.2); }
+.ds-badge-green   { background: rgba(34,197,94,0.1);  color: #4ade80; border-color: rgba(34,197,94,0.2); }
+.ds-badge-amber   { background: rgba(245,158,11,0.12); color: #fbbf24; border-color: rgba(245,158,11,0.25); }
+.ds-badge-red     { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.25); }
+.ds-badge-indigo  { background: rgba(129,140,248,0.12); color: #a5b4fc; border-color: rgba(129,140,248,0.25); }
+.ds-badge-ghost   { background: rgba(255,255,255,0.05); color: var(--c-text-muted); border-color: var(--c-border); }
+
+/* ─── INPUT SYSTEM ────────────────────────────────────────────────── */
+.ds-input {
+  width: 100%;
+  background: var(--c-bg-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: var(--c-text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ds-input:focus {
+  border-color: var(--c-blue);
+  box-shadow: 0 0 0 3px rgba(45,127,249,0.15);
+}
+.ds-input::placeholder { color: var(--c-text-dim); }
+
+/* ─── STAT / METRIC CARD ─────────────────────────────────────────── */
+.ds-metric {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.ds-metric::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--accent-color, var(--c-blue));
+  border-radius: 12px 12px 0 0;
+}
+.ds-metric:hover {
+  border-color: rgba(45,127,249,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ─── SECTION HEADERS ─────────────────────────────────────────────── */
+.ds-section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--c-blue);
+  display: flex; align-items: center; gap: 8px;
+}
+.ds-section-label::before,
+.ds-section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--c-border);
+}
+.ds-section-label::before { max-width: 20px; }
+
+.ds-section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--c-text);
+  margin-bottom: 16px;
+}
+.ds-section-divider {
+  border: none; border-top: 1px solid var(--c-border); margin: 0;
+}
+
+/* ─── TABLE SYSTEM ────────────────────────────────────────────────── */
+.ds-table { width: 100%; border-collapse: collapse; }
+.ds-table thead th {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--c-text-dim);
+  padding: 10px 16px;
+  background: var(--c-bg-surface);
+  border-bottom: 1px solid var(--c-border);
+  text-align: left;
+}
+.ds-table tbody td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--c-border);
+  font-size: 13px;
+  color: var(--c-text-muted);
+}
+.ds-table tbody tr { transition: background 0.12s; }
+.ds-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.ds-table tbody tr:hover td { color: var(--c-text); }
+.ds-table tbody tr:last-child td { border-bottom: none; }
+
+/* ─── STATUS DOTS ─────────────────────────────────────────────────── */
+.ds-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.ds-dot-green  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+.ds-dot-amber  { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.6); }
+.ds-dot-red    { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.6); }
+.ds-dot-blue   { background: #2d7ff9; box-shadow: 0 0 6px rgba(45,127,249,0.6); }
+
+/* ─── PROGRESS BAR ────────────────────────────────────────────────── */
+.ds-progress { height: 4px; background: var(--c-bg-surface); border-radius: 99px; overflow: hidden; }
+.ds-progress-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--c-blue), var(--c-teal));
+  transition: width 0.5s ease;
+}
+
+/* ─── SIDEBAR ─────────────────────────────────────────────────────── */
+.ds-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.ds-nav-item:hover { background: rgba(255,255,255,0.04); color: var(--c-text); }
+.ds-nav-item.active {
+  background: rgba(45,127,249,0.1);
+  border-left-color: var(--c-blue);
+  color: #93c5fd;
+}
+
+/* ─── TOPBAR ──────────────────────────────────────────────────────── */
+.ds-topbar {
+  background: rgba(10,12,16,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--c-border);
+}
+
+/* ─── MODAL ───────────────────────────────────────────────────────── */
+.ds-modal-backdrop {
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+}
+
+/* ─── GLOW ACCENTS ────────────────────────────────────────────────── */
+.ds-glow-blue { box-shadow: 0 0 24px var(--c-blue-glow); }
+.ds-glow-teal { box-shadow: 0 0 24px var(--c-teal-glow); }
+
+/* ─── HERO / PAGE BANNER ─────────────────────────────────────────── */
+.ds-page-hero {
+  background: linear-gradient(135deg, var(--c-bg-card) 0%, var(--c-bg-surface) 100%);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: 28px 32px;
+  position: relative;
+  overflow: hidden;
+}
+.ds-page-hero::after {
+  content: '';
+  position: absolute; top: 0; right: 0; width: 300px; height: 100%;
+  background: radial-gradient(ellipse at top right, rgba(45,127,249,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ─── PAGE ANIMATION ─────────────────────────────────────────────── */
+@keyframes ds-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ds-page { animation: ds-fade-up 0.22s ease forwards; }
+
+/* ─── GRID LINE BACKGROUND ───────────────────────────────────────── */
+.ds-grid-bg {
+  background-image:
+    linear-gradient(rgba(45,127,249,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,127,249,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
