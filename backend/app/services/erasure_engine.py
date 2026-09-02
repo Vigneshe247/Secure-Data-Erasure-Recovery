@@ -1,5 +1,6 @@
 import math
 import os
+import uuid
 import json
 import asyncio
 import hashlib
@@ -8,7 +9,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.config import settings
+from backend.app.core.config import settings, BASE_DIR
 from backend.app.models.models import (
     ErasureOperation, StorageDevice, User, VerificationResult,
     RecoveryCase, RecoveryCandidate
@@ -306,6 +307,20 @@ class ErasureEngineService:
             telemetry.append(f"[{now_str()}] Sanitization daemon initialized: {method.upper()} ({passes_count} passes)")
             telemetry.append(f"[{now_str()}] Validating operator privilege & write access... PASS ✓")
 
+            # ── Snapshot original content BEFORE any overwrite ──────────────────
+            snapshot_path: Optional[Path] = None
+            try:
+                snapshot_vault = BASE_DIR / "storage" / "snapshots"
+                snapshot_vault.mkdir(parents=True, exist_ok=True)
+                snap_name = f"snap_{uuid.uuid4().hex[:8]}_{resolved_file.name}"
+                snapshot_path = snapshot_vault / snap_name
+                with open(resolved_file, "rb") as src, open(snapshot_path, "wb") as dst:
+                    dst.write(src.read())
+                telemetry.append(f"[{now_str()}] Pre-erasure forensic snapshot captured for recovery vault.")
+            except Exception as snap_err:
+                telemetry.append(f"[{now_str()}] Snapshot skipped: {snap_err}")
+                snapshot_path = None
+
             # Multi-pass physical overwrite
             try:
                 with open(resolved_file, "r+b") as f:
@@ -431,7 +446,8 @@ class ErasureEngineService:
                     integrity_status="PASS",
                     recovery_status="PENDING",
                     original_path=str(resolved_file),
-                    ai_explanation="Target was deleted but residual clusters remain intact. Structural integrity allows for high-confidence recovery."
+                    snapshot_path=str(snapshot_path) if snapshot_path and snapshot_path.exists() else None,
+                    ai_explanation="Target was deleted but residual clusters remain intact. Pre-erasure snapshot secured for high-fidelity recovery."
                 )
                 case.total_candidates += 1
                 db.add(cand)

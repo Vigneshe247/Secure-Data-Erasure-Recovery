@@ -289,8 +289,13 @@ class RecoveryEngineService:
             out_filename = f"recovered_{cand.id[:8]}_{cand.file_name}"
             out_path = settings.RECOVERED_PATH / out_filename
 
-            # Get raw payload
-            raw_data = cls._create_sample_binary(cand.detected_format, cand.file_name)
+            # Use pre-erasure snapshot if available (exact original content), else generate sample binary
+            if cand.snapshot_path and Path(cand.snapshot_path).exists():
+                with open(cand.snapshot_path, "rb") as snap:
+                    raw_data = snap.read()
+            else:
+                raw_data = cls._create_sample_binary(cand.detected_format, cand.file_name)
+
             with open(out_path, "wb") as f:
                 f.write(raw_data)
 
@@ -299,7 +304,6 @@ class RecoveryEngineService:
                 try:
                     orig_p = Path(cand.original_path)
                     if not orig_p.exists():
-                        # Only write if it's actually missing
                         orig_p.parent.mkdir(parents=True, exist_ok=True)
                         with open(orig_p, "wb") as f:
                             f.write(raw_data)

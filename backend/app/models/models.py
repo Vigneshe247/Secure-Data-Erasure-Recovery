@@ -104,7 +104,8 @@ class RecoveryCandidate(Base):
     recovery_status = Column(String(32), default="DETECTED")  # DETECTED, RECOVERING, RECOVERED, FAILED
     ai_explanation = Column(Text, nullable=True)
     recovered_file_path = Column(String(512), nullable=True)
-    original_path = Column(String(512), nullable=True)  # Original file path before erasure for true restore
+    original_path = Column(String(512), nullable=True)      # Original file path before erasure for true restore
+    snapshot_path = Column(String(512), nullable=True)      # Pre-erasure byte snapshot for accurate content recovery
     sha256_hash = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=utc_now)
 
