@@ -14,6 +14,7 @@ import { Users } from './pages/Users';
 import { DemoLab } from './pages/DemoLab';
 import { SecureDelete } from './pages/SecureDelete';
 import { ShieldOff } from 'lucide-react';
+import { AiAssistantModal } from './components/assistant/AiAssistantModal';
 
 // Role → allowed page IDs
 const ROLE_PAGES: Record<string, string[]> = {
@@ -109,6 +110,7 @@ const MainLayout: React.FC = () => {
           {renderPage()}
         </main>
       </div>
+      <AiAssistantModal />
     </div>
   );
 };

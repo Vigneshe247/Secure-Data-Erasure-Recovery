@@ -138,7 +138,41 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
         </div>
 
         {/* Right Section */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>          {/* Role switcher */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* AI Copilot Quick Button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-ai-assistant'))}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 12px',
+              borderRadius: 14,
+              border: '1px solid rgba(255, 126, 95, 0.3)',
+              background: 'linear-gradient(135deg, rgba(255, 126, 95, 0.08), rgba(254, 180, 123, 0.08))',
+              cursor: 'pointer',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#FF7E5F',
+              boxShadow: '0 2px 8px rgba(255, 126, 95, 0.05)',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 126, 95, 0.15), rgba(254, 180, 123, 0.15))';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 126, 95, 0.08), rgba(254, 180, 123, 0.08))';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+            title="Open DataShield AI Assistant Copilot"
+          >
+            <Sparkles size={14} color="#FF7E5F" />
+            <span>AI Copilot</span>
+          </button>
+
+          {/* Role switcher */}
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setDemoMenuOpen(!demoMenuOpen)}

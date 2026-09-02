@@ -17,6 +17,7 @@ from backend.app.api.verification import router as verification_router
 from backend.app.api.audit import router as audit_router
 from backend.app.api.reports import router as reports_router
 from backend.app.api.dashboard import router as dashboard_router
+from backend.app.api.assistant import router as assistant_router
 from backend.app.api.ws import router as ws_router
 
 
@@ -75,6 +76,7 @@ app.include_router(verification_router, prefix=settings.API_V1_STR)
 app.include_router(audit_router, prefix=settings.API_V1_STR)
 app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(dashboard_router, prefix=settings.API_V1_STR)
+app.include_router(assistant_router, prefix=settings.API_V1_STR)
 app.include_router(ws_router, prefix=settings.API_V1_STR)
 
 FRONTEND_DIST = Path(BASE_DIR).parent / "frontend" / "dist"

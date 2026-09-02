@@ -344,6 +344,18 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // --- AI Assistant ---
+  async askAiAssistant(message: string, history: Array<{ role: string; content: string }> = []): Promise<{
+    reply: string;
+    suggestions: string[];
+    category: string;
+  }> {
+    return this.request('/assistant/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, history }),
+    });
+  }
 }
 
 export const api = new ApiService();
