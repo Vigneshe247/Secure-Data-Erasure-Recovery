@@ -9,8 +9,12 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.config import settings
-from backend.app.models.models import ErasureOperation, StorageDevice, User, VerificationResult
+from backend.app.models.models import (
+    ErasureOperation, StorageDevice, User, VerificationResult,
+    RecoveryCase, RecoveryCandidate
+)
 from backend.app.services.audit_service import AuditService
+from sqlalchemy.future import select
 
 
 class ErasureEngineService:
@@ -393,6 +397,29 @@ class ErasureEngineService:
                 }
             )
 
+            # Record file in Recovery area as UNRECOVERABLE
+            case = (await db.execute(select(RecoveryCase).limit(1))).scalars().first()
+            if case:
+                ext = Path(str(resolved_file)).suffix.strip(".").upper() or "BIN"
+                cand = RecoveryCandidate(
+                    case_id=case.id,
+                    file_name=file_name,
+                    detected_format=ext,
+                    byte_offset=0,
+                    file_size_bytes=original_size,
+                    signature_match_pct=0.0,
+                    metadata_quality_pct=0.0,
+                    continuity_pct=0.0,
+                    structure_validity_pct=0.0,
+                    confidence_score=0.0,
+                    confidence_level="VERY_LOW",
+                    integrity_status="CORRUPT",
+                    recovery_status="UNRECOVERABLE",
+                    ai_explanation="Target was completely wiped by Secure Erasure Engine. Structural integrity permanently lost."
+                )
+                db.add(cand)
+                await db.commit()
+
             return {
                 "success": True,
                 "target_path": str(resolved_file),
@@ -434,6 +461,28 @@ class ErasureEngineService:
                     "sha256": sha_hash
                 }
             )
+
+            # Record payload in Recovery area as UNRECOVERABLE
+            case = (await db.execute(select(RecoveryCase).limit(1))).scalars().first()
+            if case:
+                cand = RecoveryCandidate(
+                    case_id=case.id,
+                    file_name="Secure_Wiped_Payload.bin",
+                    detected_format="BIN",
+                    byte_offset=0,
+                    file_size_bytes=size_bytes,
+                    signature_match_pct=0.0,
+                    metadata_quality_pct=0.0,
+                    continuity_pct=0.0,
+                    structure_validity_pct=0.0,
+                    confidence_score=0.0,
+                    confidence_level="VERY_LOW",
+                    integrity_status="CORRUPT",
+                    recovery_status="UNRECOVERABLE",
+                    ai_explanation="Target payload was completely wiped by Secure Erasure Engine. Structural integrity permanently lost."
+                )
+                db.add(cand)
+                await db.commit()
 
             return {
                 "success": True,
