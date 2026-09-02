@@ -31,7 +31,7 @@ const GROUPS = [
     label: 'Overview',
     items: [
       { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard, badge: 'LIVE' },
-      { id: 'demolab',   label: 'SIH Demo Lab', icon: FlaskConical,    badge: 'TRY' },
+      { id: 'demolab',   label: 'Demo Lab',     icon: FlaskConical,    badge: 'TRY' },
     ],
   },
   {

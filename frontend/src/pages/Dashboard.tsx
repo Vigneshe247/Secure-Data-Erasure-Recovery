@@ -88,13 +88,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
             </div>
             <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', color: '#1E2229', lineHeight: 1.1, marginBottom: 8 }}>
               Welcome back, <span style={{ color: '#FF7E5F' }}>{user?.full_name || user?.username}</span>
+              {user?.role && (
+                <span style={{
+                  marginLeft: 12,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: 20,
+                  verticalAlign: 'middle',
+                  background: user.role === 'admin'
+                    ? 'linear-gradient(135deg, rgba(255,126,95,0.15), rgba(254,180,123,0.15))'
+                    : user.role === 'auditor'
+                    ? 'rgba(37,99,235,0.08)'
+                    : user.role === 'forensic_analyst'
+                    ? 'rgba(16,163,74,0.08)'
+                    : 'rgba(148,163,184,0.1)',
+                  border: user.role === 'admin'
+                    ? '1px solid rgba(255,126,95,0.35)'
+                    : user.role === 'auditor'
+                    ? '1px solid rgba(37,99,235,0.2)'
+                    : user.role === 'forensic_analyst'
+                    ? '1px solid rgba(16,163,74,0.2)'
+                    : '1px solid rgba(148,163,184,0.2)',
+                  color: user.role === 'admin' ? '#FF7E5F'
+                    : user.role === 'auditor' ? '#2563EB'
+                    : user.role === 'forensic_analyst' ? '#16A34A'
+                    : '#64748B',
+                  fontFamily: 'Plus Jakarta Sans, sans-serif',
+                  letterSpacing: '0.04em',
+                  textTransform: 'capitalize',
+                }}>
+                  {user.role.replace('_', ' ')}
+                </span>
+              )}
             </h1>
             <p style={{ fontSize: 13, color: '#5E6676', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '0.02em' }}>
               DETECT · ANALYZE · RECOVER/ERASE · VERIFY · REPORT
             </p>
           </div>
           <button onClick={() => setActiveTab('demolab')} className="ds-btn ds-btn-primary">
-            <Sparkles size={15} /> Launch SIH Demo Lab
+            <Sparkles size={15} /> Launch Demo Lab
           </button>
         </div>
       </div>
