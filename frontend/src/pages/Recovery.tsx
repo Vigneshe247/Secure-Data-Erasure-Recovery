@@ -354,6 +354,24 @@ export const Recovery: React.FC = () => {
                             >
                               <CheckCircle2 size={12} /> Done
                             </span>
+                          ) : cand.recovery_status === 'UNRECOVERABLE' ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '5px 12px',
+                                borderRadius: 10,
+                                background: 'rgba(220,38,38,0.08)',
+                                border: '1px solid rgba(220,38,38,0.22)',
+                                color: '#DC2626',
+                                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              <X size={12} /> Wiped
+                            </span>
                           ) : (
                             <button
                               onClick={() => handleRecover(cand.id)}

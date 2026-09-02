@@ -53,7 +53,7 @@ export interface RecoveryCandidate {
   confidence_score: number;
   confidence_level: 'VERY_LOW' | 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
   integrity_status: 'PASS' | 'PARTIAL' | 'CORRUPT';
-  recovery_status: 'DETECTED' | 'RECOVERING' | 'RECOVERED' | 'FAILED';
+  recovery_status: 'DETECTED' | 'RECOVERING' | 'RECOVERED' | 'FAILED' | 'UNRECOVERABLE';
   ai_explanation?: string;
   recovered_file_path?: string;
   sha256_hash?: string;

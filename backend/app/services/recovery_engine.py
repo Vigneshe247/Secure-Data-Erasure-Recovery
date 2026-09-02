@@ -199,12 +199,13 @@ class RecoveryEngineService:
             }
         ]
 
-        # Delete any existing candidates for this case
+        # Delete any existing candidates for this case, except those marked UNRECOVERABLE (e.g. from secure erasure)
         existing_result = await db.execute(
             select(RecoveryCandidate).where(RecoveryCandidate.case_id == case.id)
         )
         for old in existing_result.scalars().all():
-            await db.delete(old)
+            if old.recovery_status != "UNRECOVERABLE":
+                await db.delete(old)
 
         for meta in demo_candidates_meta:
             score, level, explanation = RecoveryConfidenceAI.evaluate_candidate(
