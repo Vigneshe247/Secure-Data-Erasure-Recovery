@@ -26,7 +26,7 @@ const INITIAL_GREETING: Message = {
   role: 'assistant',
   content: (
     "### 🛡️ Welcome to DataShield AI Copilot\n\n" +
-    "I am your dedicated **Cybersecurity & Digital Forensics AI Assistant** (SIH26149).\n\n" +
+    "I am your dedicated **Cybersecurity & Digital Forensics AI Assistant**.\n\n" +
     "I provide technical guidance on:\n" +
     "* **Storage-Aware Sanitization**: NIST SP 800-88 Rev.1 (Clear vs Purge), DoD 5220.22-M (3-Pass & 7-Pass), Gutmann 35-Pass, ATA/NVMe Crypto Scramble.\n" +
     "* **Deep-Sector File Carving**: Magic-byte carving (JPG, PNG, PDF, DOCX, ZIP, WEBP), raw sector hex inspection, and file restoration.\n" +
@@ -266,18 +266,6 @@ export const AiAssistantModal: React.FC = () => {
             <Sparkles size={15} color="#FFFFFF" />
           </div>
           <span>AI Copilot</span>
-          <span
-            style={{
-              padding: '2px 7px',
-              borderRadius: 12,
-              background: 'rgba(255, 255, 255, 0.25)',
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-            }}
-          >
-            SIH AI
-          </span>
         </button>
       )}
 
