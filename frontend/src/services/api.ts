@@ -135,6 +135,12 @@ class ApiService {
     });
   }
 
+  async deleteRecoveryCase(caseId: string): Promise<{ message: string }> {
+    return this.request(`/recovery/cases/${caseId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // --- Erasure ---
   async analyzeErasure(deviceId: string, targetScope: string = 'FREE_SPACE') {
     return this.request('/erasure/analyze', {
@@ -224,6 +230,18 @@ class ApiService {
     return this.request('/audit/export/json');
   }
 
+  async clearAuditLogs(): Promise<{ message: string }> {
+    return this.request('/audit/logs', {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteAuditLog(logId: string): Promise<{ message: string }> {
+    return this.request(`/audit/logs/${logId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // --- Reports ---
   async getReports(): Promise<any[]> {
     try {
@@ -231,6 +249,18 @@ class ApiService {
     } catch {
       return [];
     }
+  }
+
+  async deleteReport(reportId: string): Promise<{ message: string }> {
+    return this.request(`/reports/${reportId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async clearAllReports(): Promise<{ message: string }> {
+    return this.request('/reports', {
+      method: 'DELETE',
+    });
   }
 
   async generateReport(payload?: any): Promise<any> {

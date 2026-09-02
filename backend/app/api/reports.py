@@ -88,3 +88,52 @@ async def download_report_pdf(
         filename=f"{report.report_number}.pdf",
         media_type="application/pdf"
     )
+
+
+@router.delete("/{report_id}")
+async def delete_security_report(
+    report_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("reports.generate"))
+):
+    """Delete a single security compliance report."""
+    report = await db.get(SecurityReport, report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Security report not found")
+
+    if report.pdf_file_path:
+        try:
+            p = Path(report.pdf_file_path)
+            if p.exists():
+                p.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    rep_num = report.report_number
+    await db.delete(report)
+    await db.commit()
+    return {"message": f"Report {rep_num} deleted"}
+
+
+@router.delete("")
+async def clear_all_reports(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("reports.generate"))
+):
+    """Delete all security compliance reports."""
+    result = await db.execute(select(SecurityReport))
+    reports = result.scalars().all()
+    count = len(reports)
+    for r in reports:
+        if r.pdf_file_path:
+            try:
+                p = Path(r.pdf_file_path)
+                if p.exists():
+                    p.unlink(missing_ok=True)
+            except Exception:
+                pass
+        await db.delete(r)
+
+    await db.commit()
+    return {"message": f"Cleared {count} reports"}
+

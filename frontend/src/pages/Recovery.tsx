@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  FileSearch, Plus, Play, CheckCircle2, Binary, Sparkles, Hash, Layers, X, FileText, Download
+  FileSearch, Plus, Play, CheckCircle2, Binary, Sparkles, Hash, Layers, X, FileText, Download, Trash2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { RecoveryCase, RecoveryCandidate, StorageDevice } from '../types';
@@ -175,6 +175,22 @@ export const Recovery: React.FC = () => {
     }
   };
 
+  const [deletingCase, setDeletingCase] = useState(false);
+  const handleDeleteCase = async () => {
+    if (!selectedCase) return;
+    if (!window.confirm(`Delete forensic case "${selectedCase.case_number} · ${selectedCase.title}" and all its candidate files? This cannot be undone.`)) return;
+    setDeletingCase(true);
+    try {
+      await api.deleteRecoveryCase(selectedCase.id);
+      setSelectedCase(null);
+      await load();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setDeletingCase(false);
+    }
+  };
+
   const handleDeleteCandidate = async (id: string) => {
     try {
       await api.deleteCandidate(id);
@@ -273,6 +289,24 @@ export const Recovery: React.FC = () => {
                   </option>
                 ))}
               </select>
+              {selectedCase && (
+                <button
+                  onClick={handleDeleteCase}
+                  disabled={deletingCase}
+                  title="Delete this forensic case"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '6px 12px', borderRadius: 10,
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    background: 'rgba(239,68,68,0.07)', color: '#DC2626',
+                    fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 12, fontWeight: 700,
+                    cursor: deletingCase ? 'not-allowed' : 'pointer', opacity: deletingCase ? 0.6 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Trash2 size={12} /> {deletingCase ? 'Deleting...' : 'Delete Case'}
+                </button>
+              )}
             </div>
             {selectedCase && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
@@ -514,16 +548,25 @@ export const Recovery: React.FC = () => {
                         {/* Per-row delete */}
                         <button
                           onClick={() => handleDeleteCandidate(cand.id)}
-                          title="Remove this entry"
+                          title="Delete this candidate"
                           style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: 26, height: 26, borderRadius: 8,
+                            width: 28, height: 28, borderRadius: 8,
                             border: '1px solid rgba(239,68,68,0.25)',
                             background: 'rgba(239,68,68,0.06)', color: '#DC2626',
                             cursor: 'pointer', flexShrink: 0,
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#EF4444';
+                            e.currentTarget.style.color = '#FFFFFF';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(239,68,68,0.06)';
+                            e.currentTarget.style.color = '#DC2626';
                           }}
                         >
-                          <X size={12} />
+                          <Trash2 size={13} />
                         </button>
                       </td>
                     </tr>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Download, RefreshCw, Shield, Hash, Sparkles, Trophy } from 'lucide-react';
+import { FileText, Download, RefreshCw, Shield, Hash, Sparkles, Trophy, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { Report } from '../types';
 
@@ -49,6 +49,34 @@ export const Reports: React.FC = () => {
       URL.revokeObjectURL(url);
     } catch (e: any) {
       alert(e.message);
+    }
+  };
+
+  const [clearing, setClearing] = useState(false);
+
+  const handleDeleteReport = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this compliance report?')) return;
+    try {
+      await api.deleteReport(id);
+      if (selected?.id === id) setSelected(null);
+      await load();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleClearAllReports = async () => {
+    if (!window.confirm(`Delete all ${reports.length} reports? This cannot be undone.`)) return;
+    setClearing(true);
+    try {
+      await api.clearAllReports();
+      setSelected(null);
+      await load();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -112,10 +140,26 @@ export const Reports: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18 }}>
           {/* Document List */}
         <div className="ds-card" style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--c-border)' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 14, color: '#1E2229', display: 'flex', alignItems: 'center', gap: 8 }}>
               <FileText size={16} color="#FF7E5F" /> Documents ({reports.length})
             </div>
+            {reports.length > 0 && (
+              <button
+                onClick={handleClearAllReports}
+                disabled={clearing}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '4px 10px', borderRadius: 8,
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  background: 'rgba(239,68,68,0.07)', color: '#DC2626',
+                  fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700,
+                  cursor: clearing ? 'not-allowed' : 'pointer', opacity: clearing ? 0.6 : 1,
+                }}
+              >
+                <Trash2 size={11} /> {clearing ? 'Clearing...' : 'Clear All'}
+              </button>
+            )}
           </div>
           <div style={{ overflowY: 'auto', maxHeight: 560 }}>
             {reports.map((r) => {
@@ -144,21 +188,43 @@ export const Reports: React.FC = () => {
                     <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#1E2229', lineHeight: 1.3 }}>
                       {r.title || r.report_type}
                     </span>
-                    <span
-                      style={{
-                        fontFamily: 'Plus Jakarta Sans, sans-serif',
-                        fontSize: 9,
-                        fontWeight: 700,
-                        padding: '2px 7px',
-                        borderRadius: 10,
-                        background: `${statusColor}14`,
-                        color: statusColor,
-                        border: `1px solid ${statusColor}30`,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {r.status}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <span
+                        style={{
+                          fontFamily: 'Plus Jakarta Sans, sans-serif',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: '2px 7px',
+                          borderRadius: 10,
+                          background: `${statusColor}14`,
+                          color: statusColor,
+                          border: `1px solid ${statusColor}30`,
+                        }}
+                      >
+                        {r.status}
+                      </span>
+                      <button
+                        onClick={(e) => handleDeleteReport(e, r.id)}
+                        title="Delete report"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: 22, height: 22, borderRadius: 6,
+                          border: '1px solid rgba(239,68,68,0.2)',
+                          background: 'rgba(239,68,68,0.06)', color: '#DC2626',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#EF4444';
+                          e.currentTarget.style.color = '#FFFFFF';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(239,68,68,0.06)';
+                          e.currentTarget.style.color = '#DC2626';
+                        }}
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                   </div>
                   <div style={{ fontSize: 11, color: '#94A3B8' }}>{new Date(r.generated_at).toLocaleString()}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>

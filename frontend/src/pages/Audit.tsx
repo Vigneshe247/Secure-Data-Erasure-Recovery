@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  History, RefreshCw, Shield, Hash, Clock, Filter, Search, Activity,
+  History, RefreshCw, Shield, Hash, Clock, Filter, Search, Activity, Trash2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { AuditEntry } from '../types';
@@ -50,6 +50,20 @@ export const Audit: React.FC = () => {
 
   const uniqueActions = ['ALL', ...Array.from(new Set(entries.map((e) => e.action_type)))];
 
+  const [clearing, setClearing] = useState(false);
+  const handleClearAudit = async () => {
+    if (!window.confirm('Clear all audit trail ledger records? This cannot be undone.')) return;
+    setClearing(true);
+    try {
+      await api.clearAuditLogs();
+      await load();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setClearing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 12 }}>
@@ -73,9 +87,27 @@ export const Audit: React.FC = () => {
             Immutable Audit Trail
           </h1>
         </div>
-        <button onClick={load} className="ds-btn ds-btn-ghost ds-btn-sm">
-          <RefreshCw size={13} /> Refresh Ledger
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={load} className="ds-btn ds-btn-ghost ds-btn-sm">
+            <RefreshCw size={13} /> Refresh Ledger
+          </button>
+          {entries.length > 0 && (
+            <button
+              onClick={handleClearAudit}
+              disabled={clearing}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 10,
+                border: '1px solid rgba(239,68,68,0.3)',
+                background: 'rgba(239,68,68,0.07)', color: '#DC2626',
+                fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 12, fontWeight: 700,
+                cursor: clearing ? 'not-allowed' : 'pointer', opacity: clearing ? 0.6 : 1,
+              }}
+            >
+              <Trash2 size={13} /> {clearing ? 'Clearing...' : 'Clear All Logs'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Integrity Chain Banner Card */}

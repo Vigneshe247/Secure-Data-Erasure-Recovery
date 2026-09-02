@@ -205,3 +205,38 @@ async def delete_candidate(
     await db.commit()
     return {"message": f"Candidate {cand.file_name} deleted"}
 
+
+@router.delete("/cases/{case_id}")
+async def delete_recovery_case(
+    case_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("recovery.cases.create"))
+):
+    """Delete a forensic recovery case and all its associated candidates."""
+    case = await db.get(RecoveryCase, case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Recovery case not found")
+
+    # Delete all associated candidates
+    result = await db.execute(
+        select(RecoveryCandidate).where(RecoveryCandidate.case_id == case_id)
+    )
+    candidates = result.scalars().all()
+    for cand in candidates:
+        await db.delete(cand)
+
+    case_num = case.case_number
+    await db.delete(case)
+    await db.commit()
+
+    await AuditService.log_event(
+        db=db,
+        user=current_user,
+        action="RECOVERY_CASE_DELETED",
+        target_resource=f"Case {case_num}",
+        status="SUCCESS",
+        details={"deleted_candidates_count": len(candidates), "case_id": case_id}
+    )
+    return {"message": f"Case {case_num} and its candidates successfully deleted"}
+
+

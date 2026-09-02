@@ -52,3 +52,34 @@ async def export_audit_logs_json(
         }
         for log in logs
     ]
+
+
+@router.delete("/logs")
+async def clear_all_audit_logs(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("audit.export"))
+):
+    """Clear all audit logs from the database."""
+    result = await db.execute(select(AuditLog))
+    logs = result.scalars().all()
+    count = len(logs)
+    for l in logs:
+        await db.delete(l)
+    await db.commit()
+    return {"message": f"Cleared {count} audit logs"}
+
+
+@router.delete("/logs/{log_id}")
+async def delete_audit_log(
+    log_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("audit.export"))
+):
+    """Delete a single audit log entry."""
+    log = await db.get(AuditLog, log_id)
+    if not log:
+        raise HTTPException(status_code=404, detail="Audit log not found")
+    await db.delete(log)
+    await db.commit()
+    return {"message": f"Audit log {log_id} deleted"}
+
