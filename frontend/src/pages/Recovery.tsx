@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  FileSearch, Plus, Play, CheckCircle2, Binary, Sparkles, Hash, Layers, X,
+  FileSearch, Plus, Play, CheckCircle2, Binary, Sparkles, Hash, Layers, X, FileText
 } from 'lucide-react';
 import { api } from '../services/api';
 import { RecoveryCase, RecoveryCandidate, StorageDevice } from '../types';
@@ -152,6 +152,20 @@ export const Recovery: React.FC = () => {
     }
   };
 
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const handleExportReport = async () => {
+    if (!selectedCase) return;
+    setGeneratingReport(true);
+    try {
+      const report = await api.generateRecoveryReport(selectedCase.id);
+      window.open(api.getReportPdfUrl(report.id), '_blank');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
   const intColor: Record<string, string> = { PASS: '#16A34A', PARTIAL: '#D97706', FAIL: '#DC2626', CORRUPT: '#DC2626' };
 
   return (
@@ -199,6 +213,14 @@ export const Recovery: React.FC = () => {
             <div style={{ fontSize: 13, color: '#5E6676' }}>
               Recovered: <strong style={{ color: '#16A34A' }}>{selectedCase.recovered_count}</strong>
             </div>
+            <button
+              onClick={handleExportReport}
+              disabled={generatingReport}
+              className="ds-btn ds-btn-ghost"
+              style={{ padding: '8px 18px', borderRadius: 14 }}
+            >
+              <FileText size={12} /> {generatingReport ? 'Generating...' : 'Export Report'}
+            </button>
             <button
               onClick={handleScan}
               disabled={scanning}

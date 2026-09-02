@@ -52,6 +52,23 @@ async def generate_erasure_report(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/recovery/{case_id}/generate", response_model=SecurityReportResponse)
+async def generate_recovery_report(
+    case_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("reports.generate"))
+):
+    try:
+        report = await ReportService.create_recovery_report(
+            db=db,
+            case_id=case_id,
+            user=current_user
+        )
+        return report
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/{report_id}/pdf")
 async def download_report_pdf(
     report_id: str,

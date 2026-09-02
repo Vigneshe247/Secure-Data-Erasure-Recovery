@@ -219,3 +219,70 @@ class ReportService:
         )
 
         return report
+
+    @classmethod
+    async def create_recovery_report(
+        cls,
+        db: AsyncSession,
+        case_id: str,
+        user: User
+    ) -> SecurityReport:
+        case = await db.get(RecoveryCase, case_id)
+        if not case:
+            raise ValueError("Recovery case not found")
+
+        target_device = await db.get(StorageDevice, case.target_device_id)
+        
+        report_num = f"RPT-REC-{datetime.now().strftime('%Y%m%d')}-{os.urandom(2).hex().upper()}"
+        target_name = target_device.name if target_device else "Target Storage"
+        
+        narrative = ReportAssistantAI.generate_recovery_narrative(
+            case_number=case.case_number,
+            title=case.title,
+            target_name=target_name,
+            candidates_found=case.total_candidates or 0,
+            recovered_count=case.recovered_count or 0,
+            analyst_name=user.username,
+            timestamp_str=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        )
+
+        pdf_path = cls.generate_pdf_report(
+            report_number=report_num,
+            title=f"Forensic Recovery Report — {case.case_number}",
+            report_type="RECOVERY_CASE_REPORT",
+            summary_text=narrative,
+            metadata_dict={
+                "Case Number": case.case_number,
+                "Case Title": case.title,
+                "Target Device": target_name,
+                "Candidates Found": case.total_candidates or 0,
+                "Recovered Objects": case.recovered_count or 0,
+            }
+        )
+
+        report = SecurityReport(
+            report_number=report_num,
+            case_id=case.id,
+            title=f"Recovery Investigation — {target_name}",
+            generated_by_user_id=user.id,
+            report_type="RECOVERY_CASE_REPORT",
+            summary_markdown=narrative,
+            ai_risk_assessment=f"Recovery case processed {case.total_candidates} candidates.",
+            pdf_file_path=str(pdf_path)
+        )
+
+        db.add(report)
+        await db.commit()
+        await db.refresh(report)
+
+        await AuditService.log_event(
+            db=db,
+            user=user,
+            action="SECURITY_REPORT_GENERATED",
+            target_resource=report.report_number,
+            operation_id=report.id,
+            status="SUCCESS",
+            details={"report_number": report.report_number, "type": report.report_type}
+        )
+
+        return report

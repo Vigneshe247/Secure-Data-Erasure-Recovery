@@ -258,6 +258,12 @@ class ApiService {
     });
   }
 
+  async generateRecoveryReport(caseId: string): Promise<SecurityReport> {
+    return this.request(`/reports/recovery/${caseId}/generate`, {
+      method: 'POST',
+    });
+  }
+
   getReportPdfUrl(reportId: string): string {
     const token = this.getToken();
     return `${API_BASE}/reports/${reportId}/pdf?token=${token}`;
