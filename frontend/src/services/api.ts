@@ -123,6 +123,18 @@ class ApiService {
     });
   }
 
+  async clearAllCandidates(caseId: string): Promise<{ message: string }> {
+    return this.request(`/recovery/cases/${caseId}/candidates`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteCandidate(candidateId: string): Promise<{ message: string }> {
+    return this.request(`/recovery/files/${candidateId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // --- Erasure ---
   async analyzeErasure(deviceId: string, targetScope: string = 'FREE_SPACE') {
     return this.request('/erasure/analyze', {

@@ -148,3 +148,60 @@ async def download_recovered_file(
         filename=cand.file_name,
         media_type="application/octet-stream"
     )
+
+
+@router.delete("/cases/{case_id}/candidates")
+async def clear_all_candidates(
+    case_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("recovery.scan"))
+):
+    """Delete all candidate records belonging to a recovery case."""
+    case = await db.get(RecoveryCase, case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Recovery case not found")
+
+    result = await db.execute(
+        select(RecoveryCandidate).where(RecoveryCandidate.case_id == case_id)
+    )
+    candidates = result.scalars().all()
+    count = len(candidates)
+    for cand in candidates:
+        await db.delete(cand)
+
+    # Reset case counters
+    case.total_candidates = 0
+    case.recovered_count = 0
+    await db.commit()
+
+    await AuditService.log_event(
+        db=db,
+        user=current_user,
+        action="RECOVERY_CANDIDATES_CLEARED",
+        target_resource=f"Case {case.case_number}",
+        status="SUCCESS",
+        details={"deleted_count": count, "case_id": case_id}
+    )
+    return {"message": f"Cleared {count} candidates from case {case.case_number}"}
+
+
+@router.delete("/files/{candidate_id}")
+async def delete_candidate(
+    candidate_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("recovery.scan"))
+):
+    """Delete a single recovery candidate record."""
+    cand = await db.get(RecoveryCandidate, candidate_id)
+    if not cand:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    case = await db.get(RecoveryCase, cand.case_id)
+    await db.delete(cand)
+    if case and case.total_candidates and case.total_candidates > 0:
+        case.total_candidates -= 1
+        if cand.recovery_status == "RECOVERED" and case.recovered_count and case.recovered_count > 0:
+            case.recovered_count -= 1
+    await db.commit()
+    return {"message": f"Candidate {cand.file_name} deleted"}
+

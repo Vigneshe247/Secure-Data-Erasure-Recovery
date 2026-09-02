@@ -159,6 +159,32 @@ export const Recovery: React.FC = () => {
     }
   };
 
+  const [clearingAll, setClearingAll] = useState(false);
+  const handleClearAll = async () => {
+    if (!selectedCase) return;
+    if (!window.confirm(`Clear all ${selectedCase.candidates?.length || 0} candidates from this case? This cannot be undone.`)) return;
+    setClearingAll(true);
+    try {
+      await api.clearAllCandidates(selectedCase.id);
+      setSelectedCase(await api.getRecoveryCase(selectedCase.id));
+      await load();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setClearingAll(false);
+    }
+  };
+
+  const handleDeleteCandidate = async (id: string) => {
+    try {
+      await api.deleteCandidate(id);
+      if (selectedCase) setSelectedCase(await api.getRecoveryCase(selectedCase.id));
+      await load();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   const handleDownload = async (cand: any) => {
     try {
       const blob = await api.downloadRecoveredFile(cand.id);
@@ -314,9 +340,26 @@ export const Recovery: React.FC = () => {
               <span style={{ ...S.heading, fontSize: 16 }}>Detected File Candidates</span>
               <span style={{ ...S.label, fontSize: 12, color: '#94A3B8' }}>({selectedCase.candidates?.length || 0})</span>
             </div>
-            <span className="ds-badge" style={{ background: '#E6EFFB', color: '#2B579A', border: '1px solid #D0E0F7' }}>
-              Magic-Byte Carving
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="ds-badge" style={{ background: '#E6EFFB', color: '#2B579A', border: '1px solid #D0E0F7' }}>
+                Magic-Byte Carving
+              </span>
+              {(selectedCase.candidates?.length || 0) > 0 && (
+                <button
+                  onClick={handleClearAll}
+                  disabled={clearingAll}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '6px 14px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.3)',
+                    background: 'rgba(239,68,68,0.07)', color: '#DC2626',
+                    fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 12, fontWeight: 700,
+                    cursor: clearingAll ? 'not-allowed' : 'pointer', opacity: clearingAll ? 0.6 : 1,
+                  }}
+                >
+                  <X size={12} /> {clearingAll ? 'Clearing...' : 'Clear All'}
+                </button>
+              )}
+            </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="ds-table">
@@ -468,6 +511,20 @@ export const Recovery: React.FC = () => {
                             </button>
                           )}
                         </div>
+                        {/* Per-row delete */}
+                        <button
+                          onClick={() => handleDeleteCandidate(cand.id)}
+                          title="Remove this entry"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: 26, height: 26, borderRadius: 8,
+                            border: '1px solid rgba(239,68,68,0.25)',
+                            background: 'rgba(239,68,68,0.06)', color: '#DC2626',
+                            cursor: 'pointer', flexShrink: 0,
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
                       </td>
                     </tr>
                   );
