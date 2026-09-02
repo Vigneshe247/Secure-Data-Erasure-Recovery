@@ -85,13 +85,19 @@ export const Recovery: React.FC = () => {
   const [scanPct, setScanPct] = useState(0);
   const [scanSector, setScanSector] = useState(0);
   const [scanHex, setScanHex] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const [c, d] = await Promise.all([api.getRecoveryCases(), api.getStorageDevices()]);
-    setCases(c);
-    setDevices(d);
-    if (c.length > 0) setSelectedCase(c[0]);
-    if (d.length > 0) setNewDeviceId(d[0].id);
+    setError(null);
+    try {
+      const [c, d] = await Promise.all([api.getRecoveryCases(), api.getStorageDevices()]);
+      setCases(c);
+      setDevices(d);
+      if (c.length > 0) setSelectedCase(c[0]);
+      if (d.length > 0) setNewDeviceId(d[0].id);
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   useEffect(() => {
@@ -186,58 +192,80 @@ export const Recovery: React.FC = () => {
         </button>
       </div>
 
-      {/* Case Selector Bar */}
-      <div style={{ ...S.card, padding: '16px 22px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ ...S.label }}>Active Case:</span>
-          <select
-            value={selectedCase?.id || ''}
-            onChange={(e) => {
-              const c = cases.find((i) => i.id === e.target.value);
-              if (c) setSelectedCase(c);
-            }}
-            style={S.select}
-          >
-            {cases.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.case_number} · {c.title}
-              </option>
-            ))}
-          </select>
+      {error ? (
+        <div style={{ padding: 16, background: '#FEE2E2', color: '#DC2626', borderRadius: 12, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <strong>Error loading cases:</strong> {error}
         </div>
-        {selectedCase && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{ fontSize: 13, color: '#5E6676' }}>
-              Candidates: <strong style={{ color: '#1E2229' }}>{selectedCase.total_candidates}</strong>
-            </div>
-            <div style={{ fontSize: 13, color: '#5E6676' }}>
-              Recovered: <strong style={{ color: '#16A34A' }}>{selectedCase.recovered_count}</strong>
-            </div>
-            <button
-              onClick={handleExportReport}
-              disabled={generatingReport}
-              className="ds-btn ds-btn-ghost"
-              style={{ padding: '8px 18px', borderRadius: 14 }}
-            >
-              <FileText size={12} /> {generatingReport ? 'Generating...' : 'Export Report'}
-            </button>
-            <button
-              onClick={handleScan}
-              disabled={scanning}
-              className="ds-btn"
-              style={{
-                background: scanning ? '#FAF8F5' : 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)',
-                color: scanning ? '#94A3B8' : '#FFFFFF',
-                boxShadow: scanning ? 'none' : '0 4px 16px rgba(255,126,95,0.3)',
-                padding: '8px 18px',
-                borderRadius: 14,
-              }}
-            >
-              <Play size={12} style={{ fill: scanning ? '#94A3B8' : '#FFFFFF' }} /> {scanning ? 'Carving Sectors...' : 'Execute Recovery Scan'}
-            </button>
+      ) : cases.length === 0 ? (
+        <div style={{ ...S.card, padding: 60, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <FileSearch size={40} color="#94A3B8" />
+          <div style={{ color: '#5E6676', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 15 }}>
+            No forensic cases found. Create a new case to begin recovery operations.
           </div>
-        )}
-      </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="ds-btn ds-btn-primary"
+            style={{ marginTop: 8 }}
+          >
+            <Plus size={14} /> New Forensic Case
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Case Selector Bar */}
+          <div style={{ ...S.card, padding: '16px 22px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ ...S.label }}>Active Case:</span>
+              <select
+                value={selectedCase?.id || ''}
+                onChange={(e) => {
+                  const c = cases.find((i) => i.id === e.target.value);
+                  if (c) setSelectedCase(c);
+                }}
+                style={S.select}
+              >
+                {cases.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.case_number} · {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedCase && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                <div style={{ fontSize: 13, color: '#5E6676' }}>
+                  Candidates: <strong style={{ color: '#1E2229' }}>{selectedCase.total_candidates}</strong>
+                </div>
+                <div style={{ fontSize: 13, color: '#5E6676' }}>
+                  Recovered: <strong style={{ color: '#16A34A' }}>{selectedCase.recovered_count}</strong>
+                </div>
+                <button
+                  onClick={handleExportReport}
+                  disabled={generatingReport}
+                  className="ds-btn ds-btn-ghost"
+                  style={{ padding: '8px 18px', borderRadius: 14 }}
+                >
+                  <FileText size={12} /> {generatingReport ? 'Generating...' : 'Export Report'}
+                </button>
+                <button
+                  onClick={handleScan}
+                  disabled={scanning}
+                  className="ds-btn"
+                  style={{
+                    background: scanning ? '#FAF8F5' : 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)',
+                    color: scanning ? '#94A3B8' : '#FFFFFF',
+                    boxShadow: scanning ? 'none' : '0 4px 16px rgba(255,126,95,0.3)',
+                    padding: '8px 18px',
+                    borderRadius: 14,
+                  }}
+                >
+                  <Play size={12} style={{ fill: scanning ? '#94A3B8' : '#FFFFFF' }} /> {scanning ? 'Carving Sectors...' : 'Execute Recovery Scan'}
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Scan Progress */}
       {scanning && (
