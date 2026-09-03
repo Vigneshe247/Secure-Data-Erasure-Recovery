@@ -1,0 +1,15 @@
+{
+  "name": "datashield-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DataShield — AI-Assisted Secure Data Erasure, Recovery & Verification Platform",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload",
+    "start": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "seed": "python seed_demo.py",
+    "test": "pytest backend/tests"
+  }
+}

@@ -1,10 +1,17 @@
+import sys
+import os
+from pathlib import Path
+
+# Add project root directory to sys.path so imports work regardless of launch directory
+_root = str(Path(__file__).resolve().parent.parent.parent)
+if _root not in sys.path:
+    sys.path.insert(0, _root)
+
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-import os
 
 from backend.app.core.config import settings, BASE_DIR
 from backend.app.database.session import async_engine, Base, SyncSessionLocal, sync_engine
@@ -44,10 +51,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Middleware
+# CORS Middleware - allows any localhost/127.0.0.1 port for Vite dev servers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Open for development / Vite local dev
+    allow_origins=["*"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,9 +93,11 @@ if FRONTEND_DIST.exists():
 
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        # Allow requests to API documentation
-        if full_path.startswith("docs") or full_path.startswith("openapi.json"):
-            return None
+        # Do not intercept API or docs routes
+        if full_path.startswith("api/") or full_path == "api":
+            raise HTTPException(status_code=404, detail="API route not found")
+        if full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("redoc"):
+            raise HTTPException(status_code=404, detail="Not Found")
 
         file_path = FRONTEND_DIST / full_path
         if file_path.is_file():
@@ -103,3 +113,4 @@ else:
             "docs_url": "/docs",
             "note": "Frontend build not found. Run 'npm run build' in the frontend folder."
         }
+

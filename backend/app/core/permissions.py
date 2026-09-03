@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import Depends, HTTPException, Header, status
+from fastapi import Depends, HTTPException, Header, Query, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -61,11 +61,14 @@ ROLE_PERMISSIONS = {
 async def get_current_user(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
     x_firebase_token: Optional[str] = Header(None, alias="X-Firebase-Token"),
+    token: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     raw_token = None
     if auth and auth.credentials:
         raw_token = auth.credentials
+    elif token:
+        raw_token = token
     elif x_firebase_token:
         raw_token = x_firebase_token
 

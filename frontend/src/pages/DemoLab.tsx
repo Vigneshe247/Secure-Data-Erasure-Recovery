@@ -221,6 +221,10 @@ export const DemoLab: React.FC<DemoLabProps> = ({ setActiveTab }) => (
                 gap: 6,
                 boxShadow: `0 4px 14px ${ph.accent}35`,
               }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab(ph.tab);
+              }}
             >
               <Play size={12} style={{ fill: '#fff' }} /> Launch {ph.phase}
             </button>

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 # --- Auth & User Schemas ---
@@ -45,8 +45,7 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- Storage Schemas ---
@@ -66,8 +65,7 @@ class StorageDeviceResponse(BaseModel):
     metadata_json: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StorageAnalyzeRequest(BaseModel):
@@ -112,8 +110,7 @@ class RecoveryCandidateResponse(BaseModel):
     sha256_hash: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryCaseResponse(BaseModel):
@@ -129,8 +126,7 @@ class RecoveryCaseResponse(BaseModel):
     created_at: datetime
     candidates: Optional[List[RecoveryCandidateResponse]] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecoveryExecuteRequest(BaseModel):
@@ -193,8 +189,7 @@ class ErasureOperationResponse(BaseModel):
     completed_at: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FileShredRequest(BaseModel):
@@ -243,8 +238,7 @@ class VerificationResultResponse(BaseModel):
     verified_by_user_id: Optional[str] = None
     verified_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- Audit Schemas ---
@@ -262,8 +256,7 @@ class AuditLogResponse(BaseModel):
     details_json: Optional[str] = None
     sha256_checksum: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- Report Schemas ---
@@ -280,8 +273,7 @@ class SecurityReportResponse(BaseModel):
     pdf_file_path: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- Dashboard Overview Schemas ---

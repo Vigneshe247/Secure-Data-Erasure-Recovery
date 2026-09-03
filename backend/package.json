@@ -1,0 +1,11 @@
+{
+  "name": "datashield-backend",
+  "version": "1.0.0",
+  "description": "DataShield FastAPI Backend Service",
+  "scripts": {
+    "dev": "python main.py",
+    "start": "python main.py",
+    "seed": "python seed_demo.py",
+    "test": "pytest tests"
+  }
+}
