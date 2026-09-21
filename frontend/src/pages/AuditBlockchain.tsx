@@ -15,7 +15,7 @@ export const AuditBlockchain: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const data = await api.getAuditBlocks(200); // fetch last 200 blocks
+      const data = await api.getAuditBlocks(50); // fetch last 50 blocks for speed
       setBlocks(data);
     } catch (err) {
       console.error(err);
@@ -103,7 +103,28 @@ export const AuditBlockchain: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--c-text-muted)' }}>Syncing blockchain ledger...</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', whiteSpace: 'nowrap' }}>
+              <thead>
+                <tr style={{ background: 'var(--c-bg)', borderBottom: '1px solid var(--c-border)' }}>
+                  {['Block #','Event Type','Actor','Target File ID','Timestamp (UTC)','SHA-256 Hash / Link'].map(h => (
+                    <th key={h} style={{ padding: '16px 24px', color: 'var(--c-text-muted)', fontSize: 13, fontWeight: 600 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[1,2,3,4,5,6,7,8].map(i => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--c-border)' }}>
+                    {[1,2,3,4,5,6].map(j => (
+                      <td key={j} style={{ padding: '16px 24px' }}>
+                        <div style={{ height: 14, borderRadius: 4, background: 'var(--c-border)', opacity: 0.6, animation: 'pulse 1.5s ease-in-out infinite', width: j === 6 ? '90%' : '60%' }} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', whiteSpace: 'nowrap' }}>

@@ -4,6 +4,10 @@ import { SOCDashboardMetrics } from '../types';
 import { Shield, ShieldAlert, Activity, FileCheck, Trash2, Database, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const Skel: React.FC<{ w?: string | number; h?: number; r?: number }> = ({ w = '100%', h = 18, r = 6 }) => (
+  <div style={{ width: w, height: h, borderRadius: r, background: 'var(--c-border)', opacity: 0.6, animation: 'pulse 1.5s ease-in-out infinite' }} />
+);
+
 export const AdminSOCDashboard: React.FC = () => {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<SOCDashboardMetrics | null>(null);
@@ -21,13 +25,7 @@ export const AdminSOCDashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  if (isLoading || !metrics) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--c-text-muted)' }}>Loading SOC Metrics...</div>;
-  }
+  useEffect(() => { fetchData(); }, []);
 
   const StatCard = ({ icon: Icon, title, value, color, subtitle }: any) => (
     <div style={{ background: 'var(--c-surface)', padding: 24, borderRadius: 16, border: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -60,10 +58,10 @@ export const AdminSOCDashboard: React.FC = () => {
 
       {/* Primary Metrics */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-        <StatCard icon={Database} title="Total Monitored Files" value={metrics.total_files} color="59, 130, 246" />
-        <StatCard icon={FileCheck} title="Active Storage" value={metrics.active_files} color="34, 197, 94" />
-        <StatCard icon={ShieldAlert} title="Quarantined (Vault)" value={metrics.recoverable_files} color="245, 158, 11" subtitle={`${metrics.pending_recovery_requests} Pending Requests`} />
-        <StatCard icon={Trash2} title="Securely Purged" value={metrics.files_purged} color="239, 68, 68" />
+        <StatCard icon={Database} title="Total Monitored Files" value={isLoading ? <Skel w={60} h={36} /> : metrics?.total_files} color="59, 130, 246" />
+        <StatCard icon={FileCheck} title="Active Storage" value={isLoading ? <Skel w={60} h={36} /> : metrics?.active_files} color="34, 197, 94" />
+        <StatCard icon={ShieldAlert} title="Quarantined (Vault)" value={isLoading ? <Skel w={60} h={36} /> : metrics?.recoverable_files} color="245, 158, 11" subtitle={isLoading ? '' : `${metrics?.pending_recovery_requests} Pending Requests`} />
+        <StatCard icon={Trash2} title="Securely Purged" value={isLoading ? <Skel w={60} h={36} /> : metrics?.files_purged} color="239, 68, 68" />
       </div>
 
       {/* Compliance & Audit Alerts */}
@@ -71,18 +69,16 @@ export const AdminSOCDashboard: React.FC = () => {
         {/* Blockchain Status */}
         <div style={{ background: 'var(--c-surface)', padding: 24, borderRadius: 16, border: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <LinkIcon size={24} color={metrics.audit_chain_status === 'VALID' ? '#22c55e' : '#ef4444'} />
+            <LinkIcon size={24} color={metrics?.audit_chain_status === 'VALID' ? '#22c55e' : '#ef4444'} />
             <h2 style={{ margin: 0, fontSize: 18, fontFamily: 'Plus Jakarta Sans', fontWeight: 700 }}>Blockchain Ledger Status</h2>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 14, color: 'var(--c-text-muted)' }}>Chain Integrity</span>
-            <span style={{ padding: '6px 12px', background: metrics.audit_chain_status === 'VALID' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: metrics.audit_chain_status === 'VALID' ? '#22c55e' : '#ef4444', borderRadius: 8, fontWeight: 700, fontSize: 13 }}>
-              {metrics.audit_chain_status}
-            </span>
+            {isLoading ? <Skel w={80} h={28} r={8} /> : <span style={{ padding: '6px 12px', background: metrics?.audit_chain_status === 'VALID' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: metrics?.audit_chain_status === 'VALID' ? '#22c55e' : '#ef4444', borderRadius: 8, fontWeight: 700, fontSize: 13 }}>{metrics?.audit_chain_status}</span>}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 14, color: 'var(--c-text-muted)' }}>Blocks Verified</span>
-            <span style={{ fontSize: 16, fontWeight: 700 }}>{metrics.audit_blocks_count}</span>
+            {isLoading ? <Skel w={40} h={22} /> : <span style={{ fontSize: 16, fontWeight: 700 }}>{metrics?.audit_blocks_count}</span>}
           </div>
         </div>
 
@@ -97,7 +93,7 @@ export const AdminSOCDashboard: React.FC = () => {
           </p>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, background: 'rgba(245,158,11,0.05)', borderRadius: 8, border: '1px solid rgba(245,158,11,0.2)' }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#f59e0b' }}>Expiring within 7 Days</span>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>{metrics.retention_expiring_soon} files</span>
+            {isLoading ? <Skel w={80} h={28} /> : <span style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>{metrics?.retention_expiring_soon} files</span>}
           </div>
         </div>
       </div>
@@ -120,15 +116,21 @@ export const AdminSOCDashboard: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {metrics.recent_events.map(ev => (
-              <tr key={ev.index} style={{ borderBottom: '1px solid var(--c-border)' }}>
-                <td style={{ padding: '16px 24px', fontFamily: 'monospace', fontSize: 13, color: 'var(--c-text-muted)' }}>{ev.index}</td>
-                <td style={{ padding: '16px 24px', fontWeight: 600, fontSize: 13 }}>{ev.event_type}</td>
-                <td style={{ padding: '16px 24px', fontSize: 13, color: 'var(--c-text-muted)' }}>{ev.actor_role === 'system' ? 'SYSTEM' : ev.actor_id}</td>
-                <td style={{ padding: '16px 24px', fontSize: 13, color: 'var(--c-text-muted)' }}>{ev.timestamp ? new Date(ev.timestamp).toLocaleString() : 'N/A'}</td>
-                <td style={{ padding: '16px 24px', fontFamily: 'monospace', fontSize: 12, color: 'var(--c-accent)' }}>{ev.hash}</td>
-              </tr>
-            ))}
+            {isLoading
+              ? [1,2,3,4,5].map(i => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--c-border)' }}>
+                    {[1,2,3,4,5].map(j => <td key={j} style={{ padding: '16px 24px' }}><Skel h={14} /></td>)}
+                  </tr>
+                ))
+              : (metrics?.recent_events || []).map(ev => (
+                  <tr key={ev.index} style={{ borderBottom: '1px solid var(--c-border)' }}>
+                    <td style={{ padding: '16px 24px', fontFamily: 'monospace', fontSize: 13, color: 'var(--c-text-muted)' }}>{ev.index}</td>
+                    <td style={{ padding: '16px 24px', fontWeight: 600, fontSize: 13 }}>{ev.event_type}</td>
+                    <td style={{ padding: '16px 24px', fontSize: 13, color: 'var(--c-text-muted)' }}>{ev.actor_role === 'system' ? 'SYSTEM' : ev.actor_id}</td>
+                    <td style={{ padding: '16px 24px', fontSize: 13, color: 'var(--c-text-muted)' }}>{ev.timestamp ? new Date(ev.timestamp).toLocaleString() : 'N/A'}</td>
+                    <td style={{ padding: '16px 24px', fontFamily: 'monospace', fontSize: 12, color: 'var(--c-accent)' }}>{ev.hash}</td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>

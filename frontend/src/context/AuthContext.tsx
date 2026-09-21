@@ -161,20 +161,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      // Step 1: Backend authentication (primary)
+      // Step 1: Backend authentication (primary — blocking)
       const res = await api.login(username, password);
       localStorage.setItem('datashield_token', res.access_token);
       setToken(res.access_token);
       setUser(res.user);
 
-      const meRes = await api.getMe();
-      setPermissions(meRes.permissions);
+      // Fetch permissions in parallel without holding up the UI further
+      api.getMe().then(meRes => setPermissions(meRes.permissions)).catch(() => {});
 
-      // Step 2: Firebase sync (secondary, non-blocking)
-      // Use the email from the backend user response — most accurate source
-      const email = res.user.email;
-      await _syncFirebaseLogin(
-        email,
+      // Step 2: Firebase sync — fully fire-and-forget, never blocks login
+      _syncFirebaseLogin(
+        res.user.email,
         password,
         res.user.username,
         res.user.role,
@@ -182,6 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         res.user.id,
       );
     } finally {
+      // Release loading state immediately after backend auth succeeds
       setIsLoading(false);
     }
   };
@@ -268,19 +267,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // logout
   // ------------------------------------------------------------------
   const logout = async () => {
-    setIsLoading(true);
-    try {
-      try { await api.logout(); } catch { /* ignore */ }
-      await firebaseAuthService.logout();
-    } finally {
-      localStorage.removeItem('datashield_token');
-      localStorage.removeItem('firebase_token');
-      setUser(null);
-      setFirebaseUser(null);
-      setToken(null);
-      setPermissions([]);
-      setIsLoading(false);
-    }
+    // Clear local state immediately — don't wait on network calls
+    localStorage.removeItem('datashield_token');
+    localStorage.removeItem('firebase_token');
+    setUser(null);
+    setFirebaseUser(null);
+    setToken(null);
+    setPermissions([]);
+    // Fire backend + Firebase logout in background (non-blocking)
+    Promise.allSettled([
+      api.logout(),
+      firebaseAuthService.logout(),
+    ]);
   };
 
   // ------------------------------------------------------------------
