@@ -8,6 +8,11 @@ from backend.app.models.models import (
     AuditLog,
     SecurityReport,
 )
+from backend.app.models.enterprise_models import (
+    EnterpriseFile,
+    RecoveryRequest,
+    AuditBlock,
+)
 
 __all__ = [
     "User",
@@ -18,4 +23,7 @@ __all__ = [
     "VerificationResult",
     "AuditLog",
     "SecurityReport",
+    "EnterpriseFile",
+    "RecoveryRequest",
+    "AuditBlock",
 ]

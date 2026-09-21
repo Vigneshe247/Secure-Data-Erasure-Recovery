@@ -22,6 +22,13 @@ ROLE_PERMISSIONS = {
         "reports.view", "reports.generate", "reports.download",
         "users.view", "users.manage",
         "system.settings",
+        # Enterprise governance permissions
+        "vault.view", "vault.recover", "vault.purge",
+        "vault.recovery_requests", "vault.approve_request", "vault.reject_request",
+        "forensics.evidence", "forensics.chain_of_custody",
+        "audit.blockchain.view", "audit.blockchain.verify",
+        "certificates.view", "certificates.generate",
+        "dashboard.soc",
     },
     "security_admin": {
         "storage.view", "storage.analyze",
@@ -31,6 +38,13 @@ ROLE_PERMISSIONS = {
         "audit.view", "audit.export",
         "reports.view", "reports.generate", "reports.download",
         "users.view",
+        # Enterprise governance permissions
+        "vault.view", "vault.recover", "vault.purge",
+        "vault.recovery_requests", "vault.approve_request", "vault.reject_request",
+        "forensics.evidence", "forensics.chain_of_custody",
+        "audit.blockchain.view", "audit.blockchain.verify",
+        "certificates.view", "certificates.generate",
+        "dashboard.soc",
     },
     "forensic_analyst": {
         "storage.view", "storage.analyze",
@@ -39,6 +53,11 @@ ROLE_PERMISSIONS = {
         "verification.view",
         "audit.view",
         "reports.view", "reports.generate", "reports.download",
+        # Forensic access (read-only, no destructive)
+        "vault.view",
+        "forensics.evidence", "forensics.chain_of_custody",
+        "audit.blockchain.view",
+        "certificates.view",
     },
     "auditor": {
         "storage.view",
@@ -46,6 +65,13 @@ ROLE_PERMISSIONS = {
         "verification.view",
         "audit.view", "audit.export",
         "reports.view", "reports.download",
+        "audit.blockchain.view", "audit.blockchain.verify",
+    },
+    "employee": {
+        # Strictly limited: own files only
+        "files.own.view", "files.own.upload", "files.own.delete",
+        "files.own.download", "files.own.recovery_request",
+        "files.own.lifecycle",
     },
     "demo_user": {
         "storage.view", "storage.analyze",
@@ -110,7 +136,19 @@ async def get_current_user(
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalars().first()
         if not user:
-            role = "admin" if ("admin" in email.lower()) else "forensic_analyst"
+            role = "employee"
+            em = email.lower()
+            if "admin@datashield" in em or em.startswith("admin"):
+                role = "admin"
+            elif "it_sec" in em or "secadmin" in em or "security" in em:
+                role = "security_admin"
+            elif "analyst" in em or "forensic" in em:
+                role = "forensic_analyst"
+            elif "compliance" in em or "auditor" in em:
+                role = "auditor"
+            elif "judge" in em or "demo" in em:
+                role = "demo_user"
+
             username = email.split("@")[0]
             existing_un = await db.execute(select(User).where(User.username == username))
             if existing_un.scalars().first():
@@ -156,3 +194,25 @@ def require_permission(permission: str):
         return current_user
 
     return permission_checker
+
+
+def require_role(*roles: str):
+    """
+    Dependency factory to check if current user has one of the specified roles.
+    """
+    async def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: Requires one of roles {list(roles)}, but user has role '{current_user.role}'.",
+            )
+        return current_user
+
+    return role_checker
+
+
+def require_any_admin():
+    """
+    Dependency: require admin or security_admin role.
+    """
+    return require_role("admin", "security_admin")

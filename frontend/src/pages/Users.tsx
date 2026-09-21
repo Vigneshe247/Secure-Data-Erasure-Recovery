@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Users as UsersIcon, UserPlus, Shield, CheckCircle2, Trash2, Key, Mail, User, X } from 'lucide-react';
 import { api } from '../services/api';
+import { firebaseAuthService } from '../services/firebase';
 import { User as UserType, Role } from '../types';
 
 export const Users: React.FC = () => {
@@ -34,6 +35,7 @@ export const Users: React.FC = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // 1. Provision in Backend DB
       await api.createUser({
         username,
         email,
@@ -41,6 +43,16 @@ export const Users: React.FC = () => {
         role,
         full_name: fullName,
       });
+
+      // 2. Sync to Firebase Auth if password provided
+      if (password && password.length >= 6) {
+        try {
+          await firebaseAuthService.registerWithEmail(email, password, username, role);
+        } catch (fbErr: any) {
+          console.warn('Firebase Auth sync notice during user provisioning:', fbErr.message);
+        }
+      }
+
       setIsModalOpen(false);
       setUsername('');
       setEmail('');
@@ -56,6 +68,15 @@ export const Users: React.FC = () => {
     if (!confirm(`Are you sure you want to delete user ${uname}?`)) return;
     try {
       await api.deleteUser(userId);
+      await loadUsers();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleUpdateRole = async (userId: string, newRole: Role) => {
+    try {
+      await api.updateUser(userId, { role: newRole });
       await loadUsers();
     } catch (err: any) {
       alert(err.message);
@@ -139,20 +160,28 @@ export const Users: React.FC = () => {
                     </td>
                     <td style={{ fontSize: 13, color: '#5E6676' }}>{u.email}</td>
                     <td>
-                      <span
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleUpdateRole(u.id, e.target.value as Role)}
                         style={{
                           fontFamily: 'Plus Jakarta Sans, sans-serif',
                           fontSize: 11,
                           fontWeight: 700,
-                          padding: '3px 10px',
-                          borderRadius: 12,
+                          padding: '3px 6px',
+                          borderRadius: 8,
                           background: `${accent}14`,
                           color: accent,
                           border: `1px solid ${accent}30`,
+                          cursor: 'pointer'
                         }}
                       >
-                        {u.role.replace(/_/g, ' ').toUpperCase()}
-                      </span>
+                        <option value="admin">ADMINISTRATOR</option>
+                        <option value="security_admin">SECURITY ADMIN</option>
+                        <option value="forensic_analyst">FORENSIC ANALYST</option>
+                        <option value="auditor">AUDITOR</option>
+                        <option value="demo_user">DEMO USER</option>
+                        <option value="employee">EMPLOYEE</option>
+                      </select>
                     </td>
                     <td>
                       <span className="ds-badge" style={{ background: 'rgba(22,163,74,0.08)', color: '#16A34A', border: '1px solid rgba(22,163,74,0.22)' }}>
@@ -277,6 +306,7 @@ export const Users: React.FC = () => {
                   <option value="forensic_analyst">Forensic / Recovery Analyst</option>
                   <option value="auditor">Auditor (Read-Only)</option>
                   <option value="demo_user">Demo User (Evaluation Access)</option>
+                  <option value="employee">Employee (Standard Access)</option>
                 </select>
               </div>
 

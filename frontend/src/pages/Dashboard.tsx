@@ -127,7 +127,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
             </p>
           </div>
           <button onClick={() => setActiveTab('demolab')} className="ds-btn ds-btn-primary">
-            <Sparkles size={15} /> Launch Demo Lab
+            <Sparkles size={15} /> Launch Purge Simulator
           </button>
         </div>
       </div>

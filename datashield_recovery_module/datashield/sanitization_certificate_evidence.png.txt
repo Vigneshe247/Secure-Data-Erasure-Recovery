@@ -1,0 +1,18 @@
+============================================================
+        DATASHIELD SANITIZATION CERTIFICATE
+============================================================
+Issued       : 2026-09-20 15:40:20
+Target       : C:\Users\vaish\Downloads\datashield_recovery_module\datashield\test_data\erasure\erasure_disk.img
+Storage kind : DISK_IMAGE
+Protected    : evidence.png
+Rounds used  : 1
+Image SHA-256 before : E704CFF77F17286CDC2EBFE0DD22CF90B385199765BC9C3158B1CF0C84F8833C
+Image SHA-256 after  : 9604F35D68DF0189C66B38A0543EF1D6DF4E9E8DF20F0AD63BEBFA557DBB85DA
+Ledger records valid : True (7 records)
+Ledger head hash     : 09f1c865c1ca8e3ba912110d0390601f4495d78068809475e684a64679a22a2e
+Recovery attempt     : ERASURE VERIFIED (1 file(s) tested, 0 recovered)
+
+Verification : whole-image content scan + extent read-back = CLEAN
+Scope note   : applies to this image file only; host-filesystem/SSD
+               remnants require whole-device sanitization.
+============================================================

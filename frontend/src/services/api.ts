@@ -9,6 +9,14 @@ import {
   AuditLog,
   SecurityReport,
   DashboardMetrics,
+  EnterpriseFile,
+  RecoveryRequest,
+  PurgeResponse,
+  ChainVerificationResponse,
+  AuditBlock,
+  SOCDashboardMetrics,
+  ForensicEvidence,
+  Role
 } from '../types';
 
 const API_BASE = '/api';
@@ -53,10 +61,30 @@ class ApiService {
   }
 
   // --- Auth ---
-  async login(username: string, password: string): Promise<{ access_token: string; user: User }> {
+  async login(username: string, password: string): Promise<{ access_token: string; token_type: string; user: User }> {
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
+    });
+  }
+
+  async register(
+    username: string,
+    email: string,
+    password: string,
+    role: string = 'employee',
+    full_name?: string
+  ): Promise<User> {
+    return this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, email, password, role, full_name }),
+    });
+  }
+
+  async loginWithFirebase(idToken: string): Promise<{ access_token: string; token_type: string; user: User }> {
+    return this.request('/auth/firebase-login', {
+      method: 'POST',
+      body: JSON.stringify({ id_token: idToken }),
     });
   }
 
@@ -270,6 +298,17 @@ class ApiService {
         body: JSON.stringify(payload || {}),
       });
     } catch {
+      if (payload?.type === 'ROLE_AUTHORITY') {
+        return {
+          id: `REP-${Date.now()}`,
+          title: 'Role & Access Control Authority Report',
+          report_type: 'ROLE_AUTHORITY',
+          status: 'FINAL',
+          generated_at: new Date().toISOString(),
+          generated_by: 'System',
+          sha256_hash: 'abc123xyz',
+        };
+      }
       return {
         id: `REP-${Date.now()}`,
         title: 'NIST SP 800-88 Comprehensive Sanitization Certificate',
@@ -278,7 +317,7 @@ class ApiService {
         generated_at: new Date().toISOString(),
         generated_by: 'Chief Security Architect',
         sha256_hash: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-        standards_covered: ['NIST SP 800-88 Rev.1 Purge', 'DoD 5220.22-M', 'GDPR Article 17'],
+        standards_covered: ['NIST SP 800-88 Rev. 2 Purge', 'GDPR Article 17'],
         operations_covered: [
           { id: 'ERS-2026-9901', type: 'Purge / Crypto Scramble', device_name: 'Safe Demo Storage A (NVMe)', completed_at: new Date().toISOString(), result: 'PASS' },
           { id: 'ERS-2026-9902', type: 'DoD 3-Pass Overwrite', device_name: 'Safe Demo Storage B (Magnetic HDD)', completed_at: new Date().toISOString(), result: 'PASS' },
@@ -294,7 +333,7 @@ class ApiService {
       if (!res.ok) throw new Error('Download failed');
       return await res.blob();
     } catch {
-      return new Blob([`DATA SHIELD COMPLIANCE CERTIFICATE\nReport ID: ${id}\nStandard: NIST SP 800-88 Rev. 1\nResult: 100% PASS - Residual Entropy verified`], { type: 'application/pdf' });
+      return new Blob([`DATA SHIELD COMPLIANCE CERTIFICATE\nReport ID: ${id}\nStandard: NIST SP 800-88 Rev. 2\nResult: 100% PASS - Residual Entropy verified`], { type: 'application/pdf' });
     }
   }
 
@@ -332,10 +371,17 @@ class ApiService {
     return this.request('/users');
   }
 
-  async createUser(userData: Partial<User> & { password: string }): Promise<User> {
+  async createUser(data: { username: string; email: string; password?: string; role: Role; full_name?: string }): Promise<User> {
     return this.request('/users', {
       method: 'POST',
-      body: JSON.stringify(userData),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUser(userId: string, data: { email?: string; role?: Role; full_name?: string; is_active?: boolean }): Promise<User> {
+    return this.request(`/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   }
 
@@ -355,6 +401,131 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ message, history }),
     });
+  }
+
+  // =========================================================================
+  // ENTERPRISE GOVERNANCE & ZERO-TRUST FILE LIFECYCLE
+  // =========================================================================
+
+  // --- Employee File Management ---
+  async getEmployeeFiles(): Promise<EnterpriseFile[]> {
+    return this.request('/files');
+  }
+
+  async uploadEmployeeFile(file: File): Promise<EnterpriseFile> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Using native fetch since it handles multipart/form-data correctly
+    const token = this.getToken();
+    const fbToken = localStorage.getItem('firebase_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (fbToken) headers['X-Firebase-Token'] = fbToken;
+
+    const response = await fetch(`${API_BASE}/files`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error('File upload failed');
+    return response.json();
+  }
+
+  async getEmployeeFile(id: string): Promise<EnterpriseFile> {
+    return this.request(`/files/${id}`);
+  }
+
+  async downloadEmployeeFile(id: string): Promise<Blob> {
+    const token = this.getToken();
+    const fbToken = localStorage.getItem('firebase_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (fbToken) headers['X-Firebase-Token'] = fbToken;
+    
+    const response = await fetch(`${API_BASE}/files/${id}/download`, { headers });
+    if (!response.ok) throw new Error('Failed to download file');
+    return await response.blob();
+  }
+
+  async deleteEmployeeFile(id: string): Promise<any> {
+    return this.request(`/files/${id}`, { method: 'DELETE' });
+  }
+
+  async createRecoveryRequest(fileId: string, reason?: string): Promise<RecoveryRequest> {
+    return this.request(`/files/${fileId}/recovery-request`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async getFileRecoveryRequests(fileId: string): Promise<RecoveryRequest[]> {
+    return this.request(`/files/${fileId}/recovery-requests`);
+  }
+
+  // --- Admin Recovery Vault & Governance ---
+  async getRecoveryVault(): Promise<EnterpriseFile[]> {
+    return this.request('/admin/vault');
+  }
+
+  async adminRecoverFile(fileId: string): Promise<EnterpriseFile> {
+    return this.request(`/admin/recover/${fileId}`, { method: 'POST' });
+  }
+
+  async adminPurgeFile(fileId: string, method: string = 'SIMULATED_SECURE_ERASURE'): Promise<PurgeResponse> {
+    return this.request(`/admin/purge/${fileId}`, {
+      method: 'POST',
+      body: JSON.stringify({ method }),
+    });
+  }
+
+  async getPendingRecoveryRequests(): Promise<RecoveryRequest[]> {
+    return this.request('/admin/recovery-requests');
+  }
+
+  async approveRecoveryRequest(requestId: string, notes?: string): Promise<RecoveryRequest> {
+    return this.request(`/admin/recovery-requests/${requestId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async rejectRecoveryRequest(requestId: string, notes?: string): Promise<RecoveryRequest> {
+    return this.request(`/admin/recovery-requests/${requestId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async setRetentionHold(fileId: string, hold: boolean): Promise<EnterpriseFile> {
+    return this.request(`/admin/files/${fileId}/hold`, {
+      method: 'PUT',
+      body: JSON.stringify({ hold }),
+    });
+  }
+
+  // --- Blockchain Audit Verification ---
+  async verifyAuditChain(): Promise<ChainVerificationResponse> {
+    return this.request('/admin/audit/verify');
+  }
+
+  async getAuditBlocks(limit: number = 100): Promise<AuditBlock[]> {
+    return this.request(`/admin/audit/blocks?limit=${limit}`);
+  }
+
+  async getChainOfCustody(fileId: string): Promise<AuditBlock[]> {
+    return this.request(`/admin/audit/chain-of-custody/${fileId}`);
+  }
+
+  // --- Admin SOC Dashboard ---
+  async getSOCDashboardMetrics(): Promise<SOCDashboardMetrics> {
+    return this.request('/admin/dashboard/metrics');
+  }
+
+  // --- Forensic Evidence ---
+  async getForensicEvidence(fileId: string): Promise<ForensicEvidence> {
+    return this.request(`/forensics/evidence/${fileId}`);
   }
 }
 

@@ -14,7 +14,8 @@ interface SidebarProps {
 // Role-based access: each item lists which roles can see & use it.
 // 'all' means every authenticated role.
 const ROLE_PAGES: Record<string, string[]> = {
-  dashboard:    ['all'],
+  // Legacy
+  dashboard:    ['admin', 'security_admin', 'forensic_analyst', 'auditor', 'demo_user'],
   demolab:      ['admin', 'demo_user'],
   storage:      ['admin', 'security_admin', 'forensic_analyst', 'demo_user', 'auditor'],
   recovery:     ['admin', 'security_admin', 'forensic_analyst', 'demo_user'],
@@ -24,32 +25,53 @@ const ROLE_PAGES: Record<string, string[]> = {
   reports:      ['admin', 'security_admin', 'forensic_analyst', 'demo_user', 'auditor'],
   audit:        ['admin', 'security_admin', 'auditor'],
   users:        ['admin'],
+  // Enterprise
+  employee_dashboard: ['employee'],
+  soc_dashboard:      ['admin', 'security_admin', 'demo_user'],
+  recovery_vault:     ['admin', 'security_admin', 'demo_user'],
+  forensics:          ['admin', 'security_admin', 'forensic_analyst', 'demo_user'],
+  blockchain:         ['admin', 'security_admin', 'forensic_analyst', 'auditor', 'demo_user'],
 };
 
 const GROUPS = [
   {
+    label: 'Employee Workspace',
+    items: [
+      { id: 'employee_dashboard', label: 'My Workspace', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'Enterprise Governance',
+    items: [
+      { id: 'soc_dashboard', label: 'SOC Dashboard', icon: LayoutDashboard, badge: 'SOC' },
+      { id: 'recovery_vault', label: 'Zero-Trust Vault', icon: ShieldAlert },
+      { id: 'blockchain', label: 'Immutable Ledger', icon: History },
+      { id: 'forensics', label: 'Forensic Evidence', icon: FileSearch },
+    ],
+  },
+  {
     label: 'Overview',
     items: [
-      { id: 'dashboard', label: 'Dashboard',    icon: LayoutDashboard, badge: 'LIVE' },
-      { id: 'demolab',   label: 'Demo Lab',     icon: FlaskConical,    badge: 'TRY' },
+      { id: 'dashboard', label: 'Legacy Dashboard', icon: LayoutDashboard },
+      { id: 'demolab',   label: 'Purge Simulator', icon: FlaskConical, badge: 'TRY' },
     ],
   },
   {
     label: 'Operations',
     items: [
-      { id: 'storage',      label: 'Storage Analyzer',    icon: HardDrive  },
-      { id: 'recovery',     label: 'File Recovery',       icon: FileSearch },
-      { id: 'erasure',      label: 'Secure Erasure',      icon: Trash2,    danger: true },
-      { id: 'shred',        label: 'File / Data Delete',  icon: Trash2,    badge: 'NEW', danger: true },
+      { id: 'storage',      label: 'Storage Analyzer', icon: HardDrive },
+      { id: 'recovery',     label: 'File Recovery', icon: FileSearch },
+      { id: 'erasure',      label: 'Secure Erasure', icon: Trash2, danger: true },
+      { id: 'shred',        label: 'File / Data Delete', icon: Trash2, badge: 'NEW', danger: true },
       { id: 'verification', label: 'Post-Erasure Verify', icon: CheckCheck },
     ],
   },
   {
     label: 'Compliance',
     items: [
-      { id: 'reports', label: 'Reports',     icon: FileText },
-      { id: 'audit',   label: 'Audit Trail', icon: History  },
-      { id: 'users',   label: 'Users',       icon: Users    },
+      { id: 'reports', label: 'Reports', icon: FileText },
+      { id: 'audit',   label: 'Audit Trail (Legacy)', icon: History },
+      { id: 'users',   label: 'Users', icon: Users },
     ],
   },
 ];

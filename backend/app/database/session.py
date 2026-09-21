@@ -8,7 +8,7 @@ async_engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
     future=True,
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False, "timeout": 15}
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -23,7 +23,7 @@ AsyncSessionLocal = async_sessionmaker(
 sync_engine = create_engine(
     settings.SYNC_DATABASE_URL,
     echo=False,
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False, "timeout": 15}
 )
 
 SyncSessionLocal = sessionmaker(

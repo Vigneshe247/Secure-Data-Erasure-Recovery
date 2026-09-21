@@ -21,6 +21,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class FirebaseLoginRequest(BaseModel):
+    id_token: str
+
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr

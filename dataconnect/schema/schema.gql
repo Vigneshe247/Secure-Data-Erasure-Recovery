@@ -1,0 +1,32 @@
+type FlightVessel @table {
+  vesselName: String!
+  status: String!
+  lastMaintenanceDate: Date
+}
+
+type PropulsionUnit @table {
+  serialNumber: String!
+  currentFieldIntensity: Float!
+  firmwareVersion: String
+  vessel: FlightVessel!
+}
+
+type TelemetryLog @table {
+  timestamp: Timestamp!
+  gravitationalConstant: Float!
+  errorSeverityCode: Int
+  propulsionUnit: PropulsionUnit!
+}
+
+type CalibrationProfile @table {
+  profileName: String!
+  maxGForceThreshold: Float!
+  safetyLimitScaling: Float
+  vessel: FlightVessel!
+}
+
+type UserAccount @table {
+  email: String!
+  accessLevel: String!
+  lastLogin: Timestamp
+}

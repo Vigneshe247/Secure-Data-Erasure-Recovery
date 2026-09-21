@@ -1,0 +1,5 @@
+connectorId: "my-connector"
+generate:
+  javascriptSdk:
+    outputDir: "../../frontend/src/generated"
+    package: "@dataconnect/delete-and-recovery-service"

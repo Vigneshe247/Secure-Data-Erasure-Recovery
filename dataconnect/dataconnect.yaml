@@ -1,0 +1,10 @@
+specVersion: "v1alpha"
+serviceId: "delete-and-recovery-service"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "delete-and-recovery-db"
+      cloudSql:
+        instanceId: "delete-and-recovery-sql"

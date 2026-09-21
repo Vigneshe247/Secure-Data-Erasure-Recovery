@@ -16,13 +16,20 @@ import { SecureDelete } from './pages/SecureDelete';
 import { ShieldOff } from 'lucide-react';
 import { AiAssistantModal } from './components/assistant/AiAssistantModal';
 
+import { EmployeeDashboard } from './pages/EmployeeDashboard';
+import { RecoveryVault } from './pages/RecoveryVault';
+import { AdminSOCDashboard } from './pages/AdminSOCDashboard';
+import { ForensicEvidence } from './pages/ForensicEvidence';
+import { AuditBlockchain } from './pages/AuditBlockchain';
+
 // Role → allowed page IDs
 const ROLE_PAGES: Record<string, string[]> = {
-  admin:            ['dashboard', 'demolab', 'storage', 'recovery', 'erasure', 'shred', 'verification', 'reports', 'audit', 'users'],
-  security_admin:   ['dashboard', 'storage', 'recovery', 'erasure', 'shred', 'verification', 'reports', 'audit'],
-  forensic_analyst: ['dashboard', 'storage', 'recovery', 'verification', 'reports'],
-  auditor:          ['dashboard', 'storage', 'verification', 'reports', 'audit'],
-  demo_user:        ['dashboard', 'demolab', 'storage', 'recovery', 'shred', 'verification', 'reports'],
+  admin:            ['dashboard', 'soc_dashboard', 'recovery_vault', 'forensics', 'blockchain', 'demolab', 'storage', 'recovery', 'erasure', 'shred', 'verification', 'reports', 'audit', 'users'],
+  security_admin:   ['dashboard', 'soc_dashboard', 'forensics', 'blockchain', 'storage', 'erasure', 'shred', 'verification', 'reports', 'audit'],
+  forensic_analyst: ['dashboard', 'forensics', 'blockchain', 'storage', 'recovery', 'verification', 'reports'],
+  auditor:          ['dashboard', 'blockchain'],
+  demo_user:        ['dashboard', 'soc_dashboard', 'forensics', 'blockchain', 'demolab', 'storage', 'shred', 'verification'],
+  employee:         ['employee_dashboard'],
 };
 
 const AccessDenied: React.FC<{ tab: string }> = ({ tab }) => (
@@ -49,17 +56,31 @@ const AccessDenied: React.FC<{ tab: string }> = ({ tab }) => (
 
 const MainLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
+  
+  // Set default tab based on role
+  const getDefaultTab = (role?: string) => {
+    if (role === 'employee') return 'employee_dashboard';
+    return 'dashboard';
+  };
+
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  
+  // Update default tab once user is loaded
+  useEffect(() => {
+    if (user) {
+      setActiveTab(getDefaultTab(user.role));
+    }
+  }, [user?.role]);
 
   const role = user?.role || '';
-  const allowedPages = ROLE_PAGES[role] || ['dashboard'];
+  const allowedPages = ROLE_PAGES[role] || [getDefaultTab(role)];
 
   // If current tab becomes inaccessible (e.g. role changed), redirect to dashboard
   useEffect(() => {
     if (user && !allowedPages.includes(activeTab)) {
-      setActiveTab('dashboard');
+      setActiveTab(getDefaultTab(user.role));
     }
-  }, [role]);
+  }, [role, activeTab, user]);
 
   const handleSetTab = (tab: string) => {
     if (allowedPages.includes(tab)) {
@@ -87,6 +108,14 @@ const MainLayout: React.FC = () => {
       return <AccessDenied tab={activeTab} />;
     }
     switch (activeTab) {
+      // Enterprise Governance Additions
+      case 'employee_dashboard': return <EmployeeDashboard />;
+      case 'soc_dashboard':      return <AdminSOCDashboard />;
+      case 'recovery_vault':     return <RecoveryVault />;
+      case 'forensics':          return <ForensicEvidence />;
+      case 'blockchain':         return <AuditBlockchain />;
+      
+      // Existing Legacy
       case 'dashboard':    return <Dashboard setActiveTab={handleSetTab} />;
       case 'demolab':      return <DemoLab setActiveTab={handleSetTab} />;
       case 'storage':      return <Storage setActiveTab={handleSetTab} />;

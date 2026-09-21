@@ -99,7 +99,7 @@ export const DemoLab: React.FC<DemoLabProps> = ({ setActiveTab }) => (
           marginBottom: 14,
         }}
       >
-        DataShield <span style={{ color: '#FF7E5F' }}>Interactive</span> Demo Lab
+        DataShield <span style={{ color: '#FF7E5F' }}>Interactive</span> Purge Simulator
       </h1>
       <p style={{ color: '#5E6676', fontSize: 14, maxWidth: 580, lineHeight: 1.7, marginBottom: 24 }}>
         End-to-end walkthrough of the DataShield lifecycle in fully sandboxed <code style={{ color: '#FF7E5F', fontSize: 12, fontWeight: 700 }}>.img</code> containers. Host disk partitions are completely write-protected.

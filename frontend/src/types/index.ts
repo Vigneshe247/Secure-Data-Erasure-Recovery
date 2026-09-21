@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'security_admin' | 'forensic_analyst' | 'auditor' | 'demo_user';
+export type Role = 'admin' | 'security_admin' | 'forensic_analyst' | 'auditor' | 'demo_user' | 'employee';
 
 export interface User {
   id: string;
@@ -198,5 +198,125 @@ export interface DashboardMetrics {
     used_bytes: number;
     risk_level: string;
     health: string;
+  }>;
+}
+
+// ---------------------------------------------------------------------------
+// Enterprise Governance & Zero-Trust File Lifecycle Types
+// ---------------------------------------------------------------------------
+
+export interface EnterpriseFile {
+  id: string;
+  original_filename: string;
+  stored_filename: string;
+  owner_id: string;
+  owner_username?: string;
+  owner_fullname?: string;
+  storage_path: string;
+  active_storage_path?: string | null;
+  quarantine_storage_path?: string | null;
+  source_type: string;
+  file_size: number;
+  mime_type?: string | null;
+  sha256_hash: string;
+  status: 'ACTIVE' | 'ADMIN_RECOVERABLE' | 'RECOVERY_REQUESTED' | 'RECOVERY_APPROVED' | 'RECOVERED' | 'PURGE_IN_PROGRESS' | 'PURGED';
+  deleted_by?: string | null;
+  deleted_at?: string | null;
+  retention_expires_at?: string | null;
+  retention_hold: boolean;
+  recovered_at?: string | null;
+  recovered_by?: string | null;
+  purged_at?: string | null;
+  purged_by?: string | null;
+  erasure_method?: string | null;
+  erasure_verified?: boolean | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface RecoveryRequest {
+  id: string;
+  file_id: string;
+  employee_id: string;
+  employee_username?: string;
+  filename?: string;
+  reason?: string | null;
+  requested_at: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  review_notes?: string | null;
+}
+
+export interface AuditBlock {
+  id: string;
+  index: number;
+  timestamp: string;
+  event_type: string;
+  actor_id?: string | null;
+  actor_role?: string | null;
+  target_file_id?: string | null;
+  target_user_id?: string | null;
+  source_ip?: string | null;
+  action_details?: string | null;
+  audit_log_id?: string | null;
+  previous_hash: string;
+  hash: string;
+}
+
+export interface PurgeResponse {
+  file_id: string;
+  filename: string;
+  status: string;
+  method: string;
+  verified: boolean;
+  verification: any;
+  sha256_original: string;
+  purged_at?: string | null;
+}
+
+export interface ChainVerificationResponse {
+  valid: boolean;
+  blocks_checked: number;
+  error?: string | null;
+}
+
+export interface ForensicEvidence {
+  file_id: string;
+  filename: string;
+  file_size: number;
+  mime_type?: string | null;
+  sha256_hash: string;
+  status: string;
+  source_type: string;
+  owner_id: string;
+  detected_type?: string | null;
+  magic_bytes?: string | null;
+  magic_signature?: string | null;
+  recovery_confidence?: number | null;
+  source_offset?: number | null;
+  sector_info?: string | null;
+  recovery_timestamp?: string | null;
+  chain_of_custody?: AuditBlock[];
+}
+
+export interface SOCDashboardMetrics {
+  active_files: number;
+  recoverable_files: number;
+  pending_recovery_requests: number;
+  files_purged: number;
+  total_files: number;
+  security_events: number;
+  audit_chain_status: string;
+  audit_blocks_count: number;
+  retention_expiring_soon: number;
+  recent_events: Array<{
+    index: number;
+    event_type: string;
+    actor_id?: string;
+    actor_role?: string;
+    target_file_id?: string;
+    timestamp?: string;
+    hash: string;
   }>;
 }

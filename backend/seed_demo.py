@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import uuid
 import hashlib
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -19,21 +20,24 @@ from backend.app.models.models import (
     AuditLog,
     SecurityReport
 )
+from backend.app.models.enterprise_models import EnterpriseFile, RecoveryRequest, AuditBlock
 from backend.app.core.security import get_password_hash
+from backend.app.core.config import settings
 from backend.app.services.storage_analyzer import StorageAnalyzerService
 from backend.app.services.recovery_engine import RecoveryEngineService
 from backend.app.services.report_service import ReportService
+from backend.app.services.blockchain_audit_service import BlockchainAuditService
 from backend.app.ai.recovery_confidence import RecoveryConfidenceAI
 from backend.app.ai.residual_risk import ResidualRiskAI
 
 
 def seed_initial_data():
-    # Ensure tables exist
+    # Ensure tables exist (migration-friendly: create_all only adds missing tables)
     Base.metadata.create_all(bind=sync_engine)
 
     session = SyncSessionLocal()
     try:
-        # 1. Seed 5 Distinct RBAC Users
+        # 1. Seed RBAC Users (existing 5 + 4 new employees)
         users_data = [
             {
                 "username": "admin",
@@ -69,6 +73,35 @@ def seed_initial_data():
                 "password": "demouserpass123",
                 "role": "demo_user",
                 "full_name": "SIH 2026 Evaluation Judge"
+            },
+            # Enterprise Employee Users
+            {
+                "username": "sridharan",
+                "email": "sridharan@datashield.sih",
+                "password": "employee123",
+                "role": "employee",
+                "full_name": "Sridharan V. (Software Engineer)"
+            },
+            {
+                "username": "sharmila",
+                "email": "sharmila@datashield.sih",
+                "password": "employee123",
+                "role": "employee",
+                "full_name": "Sharmila R. (Data Analyst)"
+            },
+            {
+                "username": "prithiviraj",
+                "email": "prithiviraj@datashield.sih",
+                "password": "employee123",
+                "role": "employee",
+                "full_name": "Prithiviraj K. (DevOps Engineer)"
+            },
+            {
+                "username": "rockbhai",
+                "email": "rockbhai@datashield.sih",
+                "password": "employee123",
+                "role": "employee",
+                "full_name": "Rockbhai S. (QA Lead)"
             },
         ]
 
@@ -321,13 +354,173 @@ def seed_initial_data():
                 session.add(audit_entry)
             session.commit()
 
+        # ================================================================
+        # 6. Seed Enterprise Governance Data
+        # ================================================================
+
+        # 6a. Genesis Audit Block (blockchain)
+        if session.query(AuditBlock).count() == 0:
+            BlockchainAuditService.add_block_sync(
+                session=session,
+                event_type="GENESIS",
+                actor_id="SYSTEM",
+                actor_role="system",
+                details={"event": "DataShield Enterprise Audit Chain Initialized"},
+            )
+            print("[+] Genesis audit block created")
+
+        # 6b. Seed Enterprise Files (various lifecycle states)
+        if session.query(EnterpriseFile).count() == 0:
+            sridharan = created_users.get("sridharan")
+            sharmila = created_users.get("sharmila")
+            prithiviraj = created_users.get("prithiviraj")
+
+            if sridharan and sharmila and prithiviraj:
+                now = datetime.now(timezone.utc)
+
+                # Create sample files on disk
+                sample_files_data = [
+                    ("quarterly_report_Q3.pdf", b"%PDF-1.4\nDataShield Demo: Quarterly Financial Report Q3 2026\n" + b"x" * 500,
+                     "application/pdf", sridharan, "ACTIVE"),
+                    ("employee_handbook_v4.docx", b"PK\x03\x04DataShield Demo: Employee Handbook Version 4\n" + b"y" * 300,
+                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document", sridharan, "ACTIVE"),
+                    ("client_database_export.csv", b"id,name,email,tier\n1,Acme Corp,admin@acme.com,ENTERPRISE\n2,GlobalTech,cto@globaltech.io,PREMIUM\n",
+                     "text/csv", sharmila, "ACTIVE"),
+                    ("infrastructure_credentials.json", b'{"db_host":"10.0.1.50","db_password":"REDACTED","api_key":"sk-xxx-demo"}',
+                     "application/json", prithiviraj, "ADMIN_RECOVERABLE"),
+                    ("meeting_notes_confidential.txt", b"Board Meeting Notes - CONFIDENTIAL\nMerger discussed. Target: Acme Corp.\nDeal value: $4.2B\n",
+                     "text/plain", sridharan, "ADMIN_RECOVERABLE"),
+                    ("legacy_system_backup.zip", b"PK\x03\x04Legacy System Full Backup - DataShield Demo\n" + b"z" * 800,
+                     "application/zip", sharmila, "PURGED"),
+                ]
+
+                for fname, data, mime, owner, file_status in sample_files_data:
+                    ext = Path(fname).suffix
+                    stored_name = f"{uuid.uuid4().hex}{ext}"
+                    sha256 = hashlib.sha256(data).hexdigest()
+
+                    if file_status == "ACTIVE":
+                        fpath = settings.UPLOADS_PATH / stored_name
+                        with open(fpath, "wb") as f:
+                            f.write(data)
+                        ef = EnterpriseFile(
+                            original_filename=fname,
+                            stored_filename=stored_name,
+                            owner_id=owner.id,
+                            active_storage_path=str(fpath),
+                            quarantine_storage_path=None,
+                            storage_path=str(fpath),
+                            source_type="ENTERPRISE_UPLOAD",
+                            file_size=len(data),
+                            mime_type=mime,
+                            sha256_hash=sha256,
+                            status="ACTIVE",
+                        )
+                    elif file_status == "ADMIN_RECOVERABLE":
+                        fpath = settings.DELETED_PATH / stored_name
+                        with open(fpath, "wb") as f:
+                            f.write(data)
+                        ef = EnterpriseFile(
+                            original_filename=fname,
+                            stored_filename=stored_name,
+                            owner_id=owner.id,
+                            active_storage_path=str(settings.UPLOADS_PATH / stored_name),
+                            quarantine_storage_path=str(fpath),
+                            storage_path=str(fpath),
+                            source_type="ENTERPRISE_UPLOAD",
+                            file_size=len(data),
+                            mime_type=mime,
+                            sha256_hash=sha256,
+                            status="ADMIN_RECOVERABLE",
+                            deleted_by=owner.id,
+                            deleted_at=now - timedelta(days=5),
+                            retention_expires_at=now + timedelta(days=25),
+                            retention_hold=False,
+                        )
+                    else:  # PURGED
+                        ef = EnterpriseFile(
+                            original_filename=fname,
+                            stored_filename=stored_name,
+                            owner_id=owner.id,
+                            active_storage_path=None,
+                            quarantine_storage_path=None,
+                            storage_path="[PURGED]",
+                            source_type="ENTERPRISE_UPLOAD",
+                            file_size=len(data),
+                            mime_type=mime,
+                            sha256_hash=sha256,
+                            status="PURGED",
+                            deleted_by=owner.id,
+                            deleted_at=now - timedelta(days=35),
+                            purged_at=now - timedelta(days=3),
+                            purged_by=admin_user.id,
+                            erasure_method="SIMULATED_SECURE_ERASURE",
+                            erasure_verified=True,
+                        )
+
+                    session.add(ef)
+                session.commit()
+
+                # Create a sample pending recovery request
+                recoverable_files = session.query(EnterpriseFile).filter_by(
+                    status="ADMIN_RECOVERABLE", owner_id=sridharan.id
+                ).all()
+                if recoverable_files:
+                    req = RecoveryRequest(
+                        file_id=recoverable_files[0].id,
+                        employee_id=sridharan.id,
+                        reason="I accidentally deleted this file. It contains important meeting notes for the merger discussion.",
+                        status="PENDING",
+                    )
+                    session.add(req)
+                    # Update file status
+                    recoverable_files[0].status = "RECOVERY_REQUESTED"
+                    session.commit()
+
+                # Audit blocks for seeded enterprise events
+                for ef in session.query(EnterpriseFile).all():
+                    BlockchainAuditService.add_block_sync(
+                        session=session,
+                        event_type="FILE_UPLOADED",
+                        actor_id=ef.owner_id,
+                        actor_role="employee",
+                        target_file_id=ef.id,
+                        details={"filename": ef.original_filename, "sha256": ef.sha256_hash, "seeded": True},
+                    )
+                    if ef.status in ("ADMIN_RECOVERABLE", "RECOVERY_REQUESTED"):
+                        BlockchainAuditService.add_block_sync(
+                            session=session,
+                            event_type="EMPLOYEE_DELETED_FILE",
+                            actor_id=ef.owner_id,
+                            actor_role="employee",
+                            target_file_id=ef.id,
+                            details={"filename": ef.original_filename, "seeded": True},
+                        )
+                    if ef.status == "PURGED":
+                        BlockchainAuditService.add_block_sync(
+                            session=session,
+                            event_type="ADMIN_PURGED_FILE",
+                            actor_id=admin_user.id,
+                            actor_role="admin",
+                            target_file_id=ef.id,
+                            details={"filename": ef.original_filename, "method": ef.erasure_method, "seeded": True},
+                        )
+
+                print("[+] Enterprise governance demo data seeded")
+
         print("[+] DataShield Seed Data Successfully Initialized!")
         print("Demo Credentials:")
+        print("  --- Admin / Security Roles ---")
         print("  1. Administrator:         admin / adminpassword123")
         print("  2. IT/Security Admin:     security_admin / secadminpass123")
         print("  3. Forensic Analyst:      forensic_analyst / analystpass123")
         print("  4. Auditor / Viewer:      auditor / auditorpass123")
         print("  5. SIH Demo User:         demo_user / demouserpass123")
+        print("  --- Employee Roles ---")
+        print("  6. Sridharan (Employee):  sridharan / employee123")
+        print("  7. Sharmila (Employee):   sharmila / employee123")
+        print("  8. Prithiviraj (Employee): prithiviraj / employee123")
+        print("  9. Rockbhai (Employee):   rockbhai / employee123")
 
     except Exception as e:
         session.rollback()
@@ -339,3 +532,4 @@ def seed_initial_data():
 
 if __name__ == "__main__":
     seed_initial_data()
+
