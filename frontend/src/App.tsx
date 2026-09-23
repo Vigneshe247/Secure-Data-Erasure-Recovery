@@ -133,9 +133,9 @@ const MainLayout: React.FC = () => {
   return (
     <div style={{ minHeight:'100vh', background:'var(--c-bg)', color:'var(--c-text)', display:'flex', flexDirection:'column' }}>
       <Navbar activeTab={activeTab} setActiveTab={handleSetTab} />
-      <div style={{ display:'flex', flex:1 }}>
+      <div style={{ display:'flex', flex:1, overflow: 'hidden' }}>
         <Sidebar activeTab={activeTab} setActiveTab={handleSetTab} />
-        <main style={{ flex:1, padding:'24px 28px', overflowY:'auto', minWidth:0 }}>
+        <main style={{ flex:1, padding:'24px 28px 100px 28px', overflowY:'auto', minWidth:0 }}>
           {renderPage()}
         </main>
       </div>
