@@ -14,7 +14,7 @@ export interface StorageDevice {
   id: string;
   name: string;
   device_path: string;
-  storage_type: 'HDD' | 'SSD' | 'NVME' | 'VIRTUAL_SANDBOX';
+  storage_type: 'HDD' | 'SSD' | 'NVME' | 'VIRTUAL_SANDBOX' | 'USB_FLASH' | 'NETWORK_SHARE';
   filesystem: string;
   total_capacity_bytes: number;
   used_capacity_bytes: number;

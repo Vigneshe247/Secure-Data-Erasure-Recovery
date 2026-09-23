@@ -47,13 +47,13 @@ export const Erasure: React.FC<ErasureProps> = ({ setActiveTab }) => {
     setDevices(devData);
     if (devData.length > 0 && !selectedDevice) {
       setSelectedDevice(devData[0]);
-      setMethod(devData[0].storage_type === 'SSD' || devData[0].storage_type === 'NVME' ? 'NIST_800_88_PURGE' : 'NIST_800_88_CLEAR');
+      setMethod(devData[0].storage_type === 'SSD' || devData[0].storage_type === 'NVME' || devData[0].storage_type === 'USB_FLASH' ? 'NIST_800_88_PURGE' : 'NIST_800_88_CLEAR');
     }
   };
 
   const handleDeviceSelect = (dev: StorageDevice) => {
     setSelectedDevice(dev);
-    setMethod(dev.storage_type === 'SSD' || dev.storage_type === 'NVME' ? 'NIST_800_88_PURGE' : 'NIST_800_88_CLEAR');
+    setMethod(dev.storage_type === 'SSD' || dev.storage_type === 'NVME' || dev.storage_type === 'USB_FLASH' ? 'NIST_800_88_PURGE' : 'NIST_800_88_CLEAR');
   };
 
   const handleInitiate = async () => {
@@ -462,7 +462,7 @@ export const Erasure: React.FC<ErasureProps> = ({ setActiveTab }) => {
                 </div>
                 <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', color: '#B45309', lineHeight: 1.6 }}>
                   <div style={{ fontWeight: 800, marginBottom: 4 }}>{pendingOp.sanitization_method}</div>
-                  {selectedDevice?.storage_type === 'SSD' || selectedDevice?.storage_type === 'NVME'
+                  {selectedDevice?.storage_type === 'SSD' || selectedDevice?.storage_type === 'NVME' || selectedDevice?.storage_type === 'USB_FLASH'
                     ? 'NAND Flash architecture requires cryptographic purge. Conventional multi-pass overwrite does not reach hidden wear-leveling blocks.'
                     : 'Magnetic platters require deterministic track overwrite with sector read-back verification.'}
                 </div>

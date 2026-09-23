@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   HardDrive, RefreshCw, Sparkles, AlertTriangle, ArrowRight,
   Thermometer, Gauge, Clock, HeartPulse, Zap, Activity,
+  TrendingUp, TrendingDown, Minus, Wifi, WifiOff,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { StorageDevice, StorageProfile } from '../types';
@@ -10,13 +11,43 @@ interface StorageProps {
   setActiveTab: (tab: string) => void;
 }
 
-const INITIAL_SMART = [
-  { id: 'health', label: 'Health Score', value: 99.4, unit: '%', sub: '0 bad sectors', icon: Gauge, color: '#16A34A' },
-  { id: 'temp', label: 'Temperature', value: 32, unit: '°C', sub: 'Optimal range', icon: Thermometer, color: '#16A34A' },
-  { id: 'power', label: 'Power-On Hrs', value: 412, unit: 'h', sub: 'Total uptime', icon: Clock, color: '#2563EB' },
-  { id: 'wear', label: 'Wear Leveling', value: 0.20, unit: '%', sub: 'FTL used', icon: Zap, color: '#D97706' },
-  { id: 'life', label: 'Est. Lifespan', value: 9.8, unit: 'yr', sub: 'TBW 99.8%', icon: HeartPulse, color: '#16A34A' },
-];
+interface SmartReading {
+  temperature_c: number;
+  power_on_hours: number;
+  health_score: number;
+  health_grade: string;
+  wear_leveling_pct: number;
+  est_lifespan_years: number;
+  tbw_remaining_pct: number;
+  bad_sectors: number;
+  total_read_gb: number;
+  total_write_gb: number;
+  cpu_percent: number;
+  ram_percent: number;
+  estimated_tbw_tb: number;
+  actual_tbw_written_tb: number;
+  timestamp: number;
+}
+
+type TrendDir = 'up' | 'down' | 'stable';
+
+function getTrend(prev: number | null, curr: number): TrendDir {
+  if (prev === null) return 'stable';
+  const delta = curr - prev;
+  if (Math.abs(delta) < 0.05) return 'stable';
+  return delta > 0 ? 'up' : 'down';
+}
+
+const TrendIcon: React.FC<{ dir: TrendDir; color?: string }> = ({ dir, color }) => {
+  const sz = 12;
+  if (dir === 'up') return <TrendingUp size={sz} color={color || '#D97706'} />;
+  if (dir === 'down') return <TrendingDown size={sz} color={color || '#16A34A'} />;
+  return <Minus size={sz} color="#94A3B8" />;
+};
+
+const GRADE_COLOR: Record<string, string> = {
+  'A+': '#16A34A', A: '#22C55E', B: '#CA8A04', C: '#EA580C', D: '#DC2626',
+};
 
 export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
   const [devices, setDevices] = useState<StorageDevice[]>([]);
@@ -24,34 +55,45 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
   const [profile, setProfile] = useState<StorageProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [smartData, setSmartData] = useState(INITIAL_SMART);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSmartData((prev) =>
-        prev.map((item) => {
-          if (item.id === 'temp') {
-            const fluctuation = (Math.random() * 2) - 1;
-            const newTemp = Math.max(30, Math.min(42, item.value + fluctuation));
-            const color = newTemp > 38 ? '#DC2626' : newTemp > 35 ? '#FF7E5F' : '#16A34A';
-            return { ...item, value: parseFloat(newTemp.toFixed(1)), color };
-          }
-          if (item.id === 'wear') {
-            const newWear = item.value + (Math.random() * 0.005);
-            return { ...item, value: parseFloat(newWear.toFixed(3)) };
-          }
-          if (item.id === 'health') {
-             const fluctuation = (Math.random() * 0.2) - 0.1;
-             const newHealth = Math.max(98, Math.min(100, item.value + fluctuation));
-             return { ...item, value: parseFloat(newHealth.toFixed(1)) };
-          }
-          return item;
-        })
-      );
-    }, 1500);
-    return () => clearInterval(interval);
+  // Real-time SMART state
+  const [smart, setSmart] = useState<SmartReading | null>(null);
+  const [prevSmart, setPrevSmart] = useState<SmartReading | null>(null);
+  const [smartLive, setSmartLive] = useState(false);
+  const [smartError, setSmartError] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [pulse, setPulse] = useState(false);
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Real-time polling ────────────────────────────────────────────────────
+  const fetchSmart = useCallback(async () => {
+    try {
+      const data = await api.getSmartRealtime();
+      setSmart((prev) => {
+        setPrevSmart(prev);
+        return data;
+      });
+      setSmartLive(true);
+      setSmartError(false);
+      setLastUpdated(new Date());
+      setPulse(true);
+      setTimeout(() => setPulse(false), 600);
+    } catch {
+      setSmartError(true);
+      setSmartLive(false);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchSmart();
+    pollRef.current = setInterval(fetchSmart, 3000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [fetchSmart]);
+
+  // ── Device loading ───────────────────────────────────────────────────────
   const load = async () => {
     setLoading(true);
     setError(null);
@@ -69,16 +111,74 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
     }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const runAnalysis = async (id: string) => {
-    try {
-      setProfile(await api.analyzeStorage(id));
-    } catch {}
+    try { setProfile(await api.analyzeStorage(id)); } catch {}
   };
 
+  // ── Derived SMART display cards ──────────────────────────────────────────
+  const smartCards = smart
+    ? [
+        {
+          id: 'health',
+          label: 'Health Score',
+          value: smart.health_score.toFixed(1),
+          unit: '%',
+          sub: `${smart.bad_sectors} bad sectors`,
+          icon: Gauge,
+          color: smart.health_score >= 90 ? '#16A34A' : smart.health_score >= 70 ? '#D97706' : '#DC2626',
+          trend: getTrend(prevSmart?.health_score ?? null, smart.health_score),
+          trendInvertGood: true, // down is bad for health
+        },
+        {
+          id: 'temp',
+          label: 'Temperature',
+          value: smart.temperature_c.toFixed(1),
+          unit: '°C',
+          sub: smart.temperature_c > 60 ? 'Hot — check cooling' : smart.temperature_c > 50 ? 'Warm range' : 'Optimal range',
+          icon: Thermometer,
+          color: smart.temperature_c > 60 ? '#DC2626' : smart.temperature_c > 50 ? '#D97706' : '#16A34A',
+          trend: getTrend(prevSmart?.temperature_c ?? null, smart.temperature_c),
+          trendInvertGood: false, // up in temp = bad
+        },
+        {
+          id: 'power',
+          label: 'Uptime Hrs',
+          value: smart.power_on_hours.toFixed(1),
+          unit: 'h',
+          sub: 'Since last boot',
+          icon: Clock,
+          color: '#2563EB',
+          trend: 'stable' as TrendDir,
+          trendInvertGood: false,
+        },
+        {
+          id: 'wear',
+          label: 'Wear Leveling',
+          value: smart.wear_leveling_pct.toFixed(3),
+          unit: '%',
+          sub: `${smart.actual_tbw_written_tb.toFixed(4)} TB written`,
+          icon: Zap,
+          color: smart.wear_leveling_pct > 70 ? '#DC2626' : smart.wear_leveling_pct > 30 ? '#D97706' : '#16A34A',
+          trend: getTrend(prevSmart?.wear_leveling_pct ?? null, smart.wear_leveling_pct),
+          trendInvertGood: false,
+        },
+        {
+          id: 'life',
+          label: 'Est. Lifespan',
+          value: smart.est_lifespan_years.toFixed(1),
+          unit: 'yr',
+          sub: `TBW ${smart.tbw_remaining_pct.toFixed(1)}% left`,
+          icon: HeartPulse,
+          color: smart.est_lifespan_years > 5 ? '#16A34A' : smart.est_lifespan_years > 2 ? '#D97706' : '#DC2626',
+          trend: getTrend(prevSmart?.est_lifespan_years ?? null, smart.est_lifespan_years),
+          trendInvertGood: true,
+        },
+      ]
+    : null;
+
+  // ── Loading / Error states ───────────────────────────────────────────────
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 12 }}>
@@ -116,13 +216,15 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
     );
   }
 
+  const gradeColor = smart ? (GRADE_COLOR[smart.health_grade] || '#16A34A') : '#16A34A';
+
   return (
     <div className="ds-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div className="ds-section-label" style={{ justifyContent: 'flex-start', marginBottom: 6 }}>
-            Hardware Topography &amp; FTL Profiler
+            Hardware Topography & FTL Profiler
           </div>
           <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', color: '#1E2229' }}>
             Storage Analyzer
@@ -152,13 +254,9 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                 <div
                   style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 10,
+                    width: 38, height: 38, borderRadius: 10,
                     background: sel ? 'rgba(255, 126, 95, 0.12)' : '#FAF8F5',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     border: `1px solid ${sel ? 'rgba(255, 126, 95, 0.3)' : 'var(--c-border)'}`,
                   }}
                 >
@@ -185,38 +283,166 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
       {/* S.M.A.R.T. Diagnostics Card */}
       {selected && (
         <div className="ds-card" style={{ padding: '22px 26px' }}>
+          {/* Card Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, color: '#1E2229', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Activity size={16} color="#16A34A" /> S.M.A.R.T. Health Diagnostics
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Activity size={16} color="#16A34A" />
+              <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, color: '#1E2229' }}>
+                S.M.A.R.T. Health Diagnostics
+              </span>
+              {/* Live indicator */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 4 }}>
+                {smartLive ? (
+                  <>
+                    <div
+                      style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: '#16A34A',
+                        boxShadow: pulse ? '0 0 0 4px rgba(22,163,74,0.25)' : 'none',
+                        transition: 'box-shadow 0.3s ease',
+                      }}
+                    />
+                    <span style={{ fontSize: 10, color: '#16A34A', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      Live
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff size={10} color="#DC2626" />
+                    <span style={{ fontSize: 10, color: '#DC2626', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700 }}>
+                      Offline
+                    </span>
+                  </>
+                )}
+              </div>
+              {lastUpdated && (
+                <span style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  · {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
             </div>
-            <span className="ds-badge" style={{ background: '#E6EFFB', color: '#2B579A', border: '1px solid #D0E0F7' }}>
-              Health Grade: A+
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-            {smartData.map((m) => (
-              <div
-                key={m.label}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Health grade badge — updates in real time */}
+              <span
+                className="ds-badge"
                 style={{
-                  padding: '14px 16px',
-                  borderRadius: 14,
-                  background: '#FAF8F5',
-                  border: '1px solid var(--c-border)',
+                  background: `${gradeColor}18`,
+                  color: gradeColor,
+                  border: `1px solid ${gradeColor}44`,
+                  transition: 'all 0.5s ease',
+                  fontWeight: 800,
+                  fontSize: 13,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <m.icon size={14} color={m.color} />
-                  <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676' }}>
-                    {m.label}
+                Health Grade: {smart?.health_grade ?? 'A+'}
+              </span>
+
+              {/* CPU & RAM live mini-stats */}
+              {smart && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: '#5E6676', background: '#F1F5F9', borderRadius: 8, padding: '3px 8px', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600 }}>
+                    CPU {smart.cpu_percent.toFixed(0)}%
+                  </span>
+                  <span style={{ fontSize: 11, color: '#5E6676', background: '#F1F5F9', borderRadius: 8, padding: '3px 8px', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600 }}>
+                    RAM {smart.ram_percent.toFixed(0)}%
                   </span>
                 </div>
-                <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 24, color: m.color }}>
-                  {m.value}{m.unit}
+              )}
+            </div>
+          </div>
+
+          {/* SMART Metric Cards */}
+          {smartError && !smart && (
+            <div style={{ padding: '12px 16px', background: '#FEF3C7', borderRadius: 12, border: '1px solid #FDE68A', color: '#92400E', fontSize: 13, fontFamily: 'Plus Jakarta Sans, sans-serif', marginBottom: 12 }}>
+              <AlertTriangle size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+              Unable to fetch real-time SMART data from the backend. Ensure the backend server is running.
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+            {(smartCards ?? []).map((m) => {
+              const trendGoodUp = m.trendInvertGood;
+              const isGoodTrend =
+                m.trend === 'stable' ||
+                (trendGoodUp && m.trend === 'up') ||
+                (!trendGoodUp && m.trend === 'down');
+              const trendColor = m.trend === 'stable'
+                ? '#94A3B8'
+                : isGoodTrend ? '#16A34A' : '#D97706';
+
+              return (
+                <div
+                  key={m.id}
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: 14,
+                    background: '#FAF8F5',
+                    border: '1px solid var(--c-border)',
+                    transition: 'border-color 0.3s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <m.icon size={14} color={m.color} />
+                      <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E6676' }}>
+                        {m.label}
+                      </span>
+                    </div>
+                    <TrendIcon dir={m.trend} color={trendColor} />
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 24, color: m.color,
+                      transition: 'color 0.5s ease',
+                    }}
+                  >
+                    {m.value}{m.unit}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>{m.sub}</div>
                 </div>
-                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>{m.sub}</div>
+              );
+            })}
+
+            {/* While loading SMART for the first time, show skeleton cards */}
+            {!smartCards && Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                style={{ padding: '14px 16px', borderRadius: 14, background: '#FAF8F5', border: '1px solid var(--c-border)', animation: 'pulse 1.5s ease-in-out infinite' }}
+              >
+                <div style={{ height: 12, background: '#E2E8F0', borderRadius: 6, marginBottom: 12, width: '60%' }} />
+                <div style={{ height: 28, background: '#E2E8F0', borderRadius: 8, marginBottom: 8 }} />
+                <div style={{ height: 10, background: '#E2E8F0', borderRadius: 6, width: '40%' }} />
               </div>
             ))}
           </div>
+
+          {/* Real-time I/O throughput bar */}
+          {smart && (
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--c-border)', display: 'flex', gap: 24, alignItems: 'center' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: '#5E6676', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600 }}>Read (session)</span>
+                  <span style={{ fontSize: 11, color: '#2563EB', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700 }}>{smart.total_read_gb.toFixed(1)} GB</span>
+                </div>
+                <div style={{ height: 4, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: '#2563EB', borderRadius: 4, width: `${Math.min((smart.total_read_gb / (smart.total_read_gb + smart.total_write_gb + 0.001)) * 100, 100)}%`, transition: 'width 1s ease' }} />
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: '#5E6676', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600 }}>Write (session)</span>
+                  <span style={{ fontSize: 11, color: '#D97706', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700 }}>{smart.total_write_gb.toFixed(1)} GB</span>
+                </div>
+                <div style={{ height: 4, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: '#D97706', borderRadius: 4, width: `${Math.min((smart.total_write_gb / (smart.total_read_gb + smart.total_write_gb + 0.001)) * 100, 100)}%`, transition: 'width 1s ease' }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Plus Jakarta Sans, sans-serif', whiteSpace: 'nowrap' }}>
+                Est. TBW: {smart.estimated_tbw_tb.toFixed(0)} TB rating
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -227,7 +453,7 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
           <div className="ds-card" style={{ padding: '22px 26px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, color: '#1E2229' }}>
-                Architecture &amp; FTL Profile — <span style={{ color: '#FF7E5F' }}>{selected.name}</span>
+                Architecture & FTL Profile — <span style={{ color: '#FF7E5F' }}>{selected.name}</span>
               </div>
               <span
                 className="ds-badge"
@@ -250,12 +476,7 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
               ].map(([k, v, c]) => (
                 <div
                   key={k as string}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 12,
-                    background: '#FAF8F5',
-                    border: '1px solid var(--c-border)',
-                  }}
+                  style={{ padding: '12px 14px', borderRadius: 12, background: '#FAF8F5', border: '1px solid var(--c-border)' }}
                 >
                   <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 6 }}>
                     {k as string}
@@ -270,13 +491,9 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
             {profile.ftl_warning && (
               <div
                 style={{
-                  padding: '14px 16px',
-                  borderRadius: 14,
-                  background: 'rgba(217, 119, 6, 0.08)',
-                  border: '1px solid rgba(217, 119, 6, 0.22)',
-                  marginBottom: 14,
-                  display: 'flex',
-                  gap: 12,
+                  padding: '14px 16px', borderRadius: 14,
+                  background: 'rgba(217, 119, 6, 0.08)', border: '1px solid rgba(217, 119, 6, 0.22)',
+                  marginBottom: 14, display: 'flex', gap: 12,
                 }}
               >
                 <AlertTriangle size={16} color="#D97706" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -288,13 +505,9 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
 
             <div
               style={{
-                fontSize: 13,
-                color: '#5E6676',
-                lineHeight: 1.7,
-                padding: '14px 16px',
-                borderRadius: 14,
-                background: '#FAF8F5',
-                border: '1px solid var(--c-border)',
+                fontSize: 13, color: '#5E6676', lineHeight: 1.7,
+                padding: '14px 16px', borderRadius: 14,
+                background: '#FAF8F5', border: '1px solid var(--c-border)',
               }}
             >
               {profile.technical_rationale}
@@ -313,11 +526,7 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
           {/* AI Advisor Card */}
           <div
             className="ds-card"
-            style={{
-              padding: '22px 24px',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
+            style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}
           >
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid var(--c-border)' }}>

@@ -68,5 +68,27 @@ async def analyze_storage(
         "trim_active": analysis["trim_active"],
         "recommended_strategy": analysis["recommended_strategy"],
         "technical_rationale": analysis["technical_rationale"],
+        "compliance_standard": analysis.get("compliance_standard", "NIST SP 800-88"),
         "ai_confidence": analysis["ai_confidence"]
     }
+
+
+@router.get("/smart/realtime")
+async def get_smart_realtime(
+    current_user: User = Depends(require_permission("storage.view"))
+):
+    """
+    Returns genuine real-time S.M.A.R.T. hardware metrics for the host laptop.
+    Data is read live on every request — no caching — making it suitable for
+    3-second polling from the frontend Storage Analyzer page.
+
+    Sources:
+    - Temperature: WMI Win32_PerfFormattedData_Counters_ThermalZoneInformation
+    - Power-On Hours: psutil.boot_time() uptime
+    - Health Score: composite of disk fill, temperature, and wear levels
+    - Wear Leveling: cumulative write bytes vs. estimated NVMe TBW rating
+    - Lifespan: remaining TBW / current daily write rate
+    """
+    data = StorageAnalyzerService.get_realtime_smart_data()
+    return data
+

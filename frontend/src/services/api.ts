@@ -122,6 +122,26 @@ class ApiService {
     });
   }
 
+  async getSmartRealtime(): Promise<{
+    temperature_c: number;
+    power_on_hours: number;
+    health_score: number;
+    health_grade: string;
+    wear_leveling_pct: number;
+    est_lifespan_years: number;
+    tbw_remaining_pct: number;
+    bad_sectors: number;
+    total_read_gb: number;
+    total_write_gb: number;
+    cpu_percent: number;
+    ram_percent: number;
+    estimated_tbw_tb: number;
+    actual_tbw_written_tb: number;
+    timestamp: number;
+  }> {
+    return this.request('/storage/smart/realtime');
+  }
+
   // --- Recovery ---
   async getRecoveryCases(): Promise<RecoveryCase[]> {
     return this.request('/recovery/cases');

@@ -1,0 +1,95 @@
+DataShield — AI-Assisted Secure Data Erasure, Authorized File Recovery & Verification Platform
+=============================================================================================
+Detailed Scratch-to-End Implementation Plan
+
+1. PROJECT OVERVIEW
+-------------------
+DataShield is a comprehensive cybersecurity platform designed to solve the problem of insecure data deletion. It addresses both forensic recovery of deleted files and secure, storage-aware erasure across modern SSD/NVMe and legacy HDD media.
+
+Core Modules:
+- Detection & Analysis (Storage Profiler)
+- Forensic Recovery Engine
+- Storage-Aware Secure Erasure
+- Post-Erasure Verification
+- Tamper-Evident Audit & Reporting
+
+2. ARCHITECTURE DESIGN
+----------------------
+- Frontend: React 18, TypeScript, Vite, TailwindCSS (for the SOC-themed UI dashboard)
+- Backend: Python 3.12, FastAPI (for asynchronous high-performance API)
+- Database: SQLite (via SQLAlchemy ORM) with asynchronous drivers for robust audit trailing and metadata storage
+- Core Engines: Custom Python modules for sector-level storage manipulation, magic-byte carving, and entropy calculation.
+
+3. PHASE 1: ENVIRONMENT SETUP & SCAFFOLDING
+-------------------------------------------
+1. Initialize Repository: Create Git repository and structure directories (`frontend/`, `backend/`, `datashield_recovery_module/`).
+2. Backend Setup:
+   - Configure Python virtual environment.
+   - Install dependencies (`fastapi`, `uvicorn`, `sqlalchemy`, `aiosqlite`, `reportlab`, `pytest`, `python-jose`, `passlib`).
+   - Scaffold FastAPI app structure (`app/main.py`, `app/api/`, `app/models/`, `app/services/`).
+3. Frontend Setup:
+   - Initialize Vite React + TypeScript project.
+   - Install dependencies (`lucide-react`, `tailwindcss`, `recharts`, `axios`, `react-router-dom`).
+   - Configure TailwindCSS theme for a cybersecurity/dark mode look.
+
+4. PHASE 2: BACKEND IMPLEMENTATION (CORE APIS)
+----------------------------------------------
+1. Authentication & RBAC (Role-Based Access Control):
+   - Implement JWT-based auth.
+   - Define roles: System Admin, Security Admin, Forensic Analyst, Auditor, Demo User.
+   - Restrict endpoints (e.g., Forensic Analysts cannot perform Erasure).
+2. Storage Management API (`backend/app/api/storage.py`):
+   - Build virtual `.img` disk sandbox environment for safe demo purposes.
+   - Implement real internal storage drive detection (HDD vs SSD/NVMe).
+   - Implement dynamic detection and control of connected external/removable storage devices (USB Drives, External HDDs, SD Cards) as well as Network Shares (SMB/NFS). Tag these appropriately (`USB_FLASH`, `NETWORK_SHARE`) to allow for selective wipe, scan, and recovery operations.
+3. Recovery Engine API (`backend/app/api/recovery.py`):
+   - Implement magic-byte signature scanning (JPG, PNG, PDF, etc.).
+   - Build file-carving algorithm to extract data boundaries.
+   - Implement "Explainable AI Confidence Scoring" equation to grade file continuity.
+4. Erasure Engine API (`backend/app/api/erasure.py`):
+   - Implement NIST 800-88 Clear (HDD) logic (multi-pass overwrites).
+   - Implement Cryptographic Purge (SSD) logic.
+   - Require human-in-the-loop multi-step typing verification for destructive actions.
+5. Verification & Audit APIs:
+   - Build Shannon Entropy calculation across disk sectors to prove data destruction.
+   - Build SHA-256 ledger logging system for tamper-evident tracking.
+   - Generate automated PDF compliance reports.
+
+5. PHASE 3: FRONTEND IMPLEMENTATION (UI/UX)
+-------------------------------------------
+1. Dashboard & Routing:
+   - Implement protected routes based on user role.
+   - Build main dashboard displaying system status, recent operations, and active alerts.
+2. Storage Analyzer UI:
+   - Create disk topography visualization (showing logical vs physical blocks).
+   - Display real-time drive metrics.
+3. Recovery & File Carving UI:
+   - Build interface for Forensic Analysts to initiate scans.
+   - Show file fragments and confidence scores in a data grid.
+4. Erasure & Wipe Matrix UI:
+   - Build real-time 64-sector block wipe visualizer (color-coded red to green).
+   - Create secure prompt dialogs preventing accidental clicks.
+5. Reporting UI:
+   - Allow Compliance Auditors to view read-only logs and download PDF certificates.
+
+6. PHASE 4: INTEGRATION & TESTING
+---------------------------------
+1. End-to-End API Hookup:
+   - Connect React UI to FastAPI backend using Axios interceptors (attaching JWTs).
+   - Establish WebSockets if real-time matrix rendering requires low latency (or use long-polling).
+2. Sandbox Seeding:
+   - Write `seed_demo.py` script to generate dummy SQLite data and `.img` virtual disks pre-populated with hidden "deleted" magic-bytes for demoing recovery.
+3. Automated Testing:
+   - Write `pytest` test suites verifying RBAC boundaries and magic byte parsing accuracy.
+   - Ensure secure wipe logic accurately resets data bits in sandbox testing.
+
+7. PHASE 5: DEPLOYMENT & HANDOFF
+--------------------------------
+1. Scripts Automation:
+   - Create `.bat` or `.sh` scripts (`run_backend.bat`, `run_frontend.bat`, `run_all.bat`) for easy local launching.
+2. Containerization (Optional):
+   - Write Dockerfile and docker-compose.yml for production-grade portability.
+3. Documentation:
+   - Finalize `README.md` with system architecture diagrams, login credentials, and step-by-step SIH demo execution workflows.
+4. Live Demo Execution:
+   - Present the exact end-to-end flow from detection to secure erasure to verification to the panel.
