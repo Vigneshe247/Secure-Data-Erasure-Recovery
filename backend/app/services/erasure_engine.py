@@ -277,10 +277,33 @@ class ErasureEngineService:
             user_home,
         ]
 
+        # 4. Dynamically detect and add Removable USB Drives (e.g., E:\)
+        try:
+            import psutil
+            for part in psutil.disk_partitions(all=False):
+                # Typically 'removable' on Windows, or just include all non-C drives
+                if part.mountpoint and part.mountpoint != "C:\\":
+                    mp = Path(part.mountpoint)
+                    search_roots.append(mp)
+                    # Often users place files in a folder on the USB
+                    if mp.exists():
+                        try:
+                            for sub in mp.iterdir():
+                                if sub.is_dir() and not sub.name.startswith('$'):
+                                    search_roots.append(sub)
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+        # Perform the search
         for root in search_roots:
             candidate = root / filename
             if candidate.exists() and candidate.is_file():
                 return candidate.resolve()
+            
+            # If we appended a dir, also check inside one level deep dynamically if needed
+            # (handled by the sub append above)
 
         return None
 
