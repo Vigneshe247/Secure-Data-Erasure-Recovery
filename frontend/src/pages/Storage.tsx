@@ -55,6 +55,7 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
   const [profile, setProfile] = useState<StorageProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [disconnectedBanner, setDisconnectedBanner] = useState<string | null>(null);
 
   // Real-time SMART state
   const [smart, setSmart] = useState<SmartReading | null>(null);
@@ -65,6 +66,8 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
   const [pulse, setPulse] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const devicePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const selectedRef = useRef<StorageDevice | null>(null);
 
   // ── Real-time polling ────────────────────────────────────────────────────
   const fetchSmart = useCallback(async () => {
@@ -93,25 +96,53 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
     };
   }, [fetchSmart]);
 
+  // keep selectedRef in sync so the auto-poll closure can read the latest value
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
+
   // ── Device loading ───────────────────────────────────────────────────────
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const data = await api.getStorageDevices();
       setDevices(data);
-      if (data.length > 0) {
+
+      // Hot-plug detection: check if previously selected drive has disappeared
+      const currentSelected = selectedRef.current;
+      if (currentSelected) {
+        const stillExists = data.some((d) => d.id === currentSelected.id);
+        if (!stillExists) {
+          // Drive was unplugged
+          setSelected(data.length > 0 ? data[0] : null);
+          setProfile(null);
+          setDisconnectedBanner(`"${currentSelected.name}" was disconnected`);
+          setTimeout(() => setDisconnectedBanner(null), 5000);
+          if (data.length > 0) runAnalysis(data[0].id);
+        } else {
+          // Still present — update its stats silently
+          const updated = data.find((d) => d.id === currentSelected.id);
+          if (updated) setSelected(updated);
+        }
+      } else if (data.length > 0 && !silent) {
+        // First load — auto-select first device
         setSelected(data[0]);
         runAnalysis(data[0].id);
       }
     } catch (err: any) {
-      setError(err.message);
+      if (!silent) setError(err.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  // Initial load + auto-rescan every 10 s for hot-plug/unplug detection
+  useEffect(() => {
+    load();
+    devicePollRef.current = setInterval(() => load(true), 10000);
+    return () => {
+      if (devicePollRef.current) clearInterval(devicePollRef.current);
+    };
+  }, []);
 
   const runAnalysis = async (id: string) => {
     try { setProfile(await api.analyzeStorage(id)); } catch {}
@@ -234,6 +265,28 @@ export const Storage: React.FC<StorageProps> = ({ setActiveTab }) => {
           <RefreshCw size={13} /> Rescan
         </button>
       </div>
+      {/* Drive Disconnected Banner */}
+      {disconnectedBanner && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 18px',
+            borderRadius: 12,
+            background: 'rgba(220, 38, 38, 0.08)',
+            border: '1px solid rgba(220, 38, 38, 0.28)',
+            color: '#DC2626',
+            fontFamily: 'Plus Jakarta Sans, sans-serif',
+            fontSize: 13,
+            fontWeight: 600,
+            animation: 'slideDown 0.3s ease',
+          }}
+        >
+          <AlertTriangle size={15} color="#DC2626" style={{ flexShrink: 0 }} />
+          {disconnectedBanner} — device list updated automatically.
+        </div>
+      )}
 
       {/* Device Selector Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>

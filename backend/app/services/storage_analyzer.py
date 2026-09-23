@@ -276,22 +276,44 @@ class StorageAnalyzerService:
     async def get_or_create_devices(cls, db: AsyncSession) -> List[StorageDevice]:
         """
         Dynamically fetches real system devices on every call.
+
+        Key behaviour:
+        - Upserts currently-connected drives into the DB.
+        - REMOVES non-sandbox DB entries whose mountpoint is no longer present
+          (i.e. the drive has been unplugged since the last scan).
+        - Sandbox/demo devices are never deleted so seeded Erasure foreign keys remain intact.
         """
-        # We deliberately do not delete sandbox devices from DB to preserve foreign keys 
-        # for seeded demo Erasure Operations, but we filter them out of the return list later.
         result = await db.execute(select(StorageDevice))
         db_devices = result.scalars().all()
-        
-        # Get real host drives
+
+        # Live scan — get all currently-connected physical drives
         real_devices = cls.get_system_devices()
-        
-        # Upsert real devices to DB so they have valid IDs
+        live_paths = {rdev["device_path"] for rdev in real_devices}
+
+        # ── 1. Remove stale (unplugged) non-sandbox entries from DB ──────────
+        for db_dev in db_devices:
+            if not db_dev.is_sandbox and db_dev.device_path not in live_paths:
+                await db.delete(db_dev)
+
+        # ── 2. Upsert currently-connected drives ─────────────────────────────
+        # Re-fetch after deletions so the in-memory list is accurate
+        await db.flush()
+        refreshed_result = await db.execute(select(StorageDevice))
+        db_devices_refreshed = refreshed_result.scalars().all()
+
         for rdev in real_devices:
-            existing = next((d for d in db_devices if d.device_path == rdev["device_path"]), None)
+            existing = next(
+                (d for d in db_devices_refreshed if d.device_path == rdev["device_path"]),
+                None
+            )
             if existing:
+                # Update live usage stats
                 existing.total_capacity_bytes = rdev["total_capacity_bytes"]
                 existing.used_capacity_bytes = rdev["used_capacity_bytes"]
                 existing.health_status = rdev["health_status"]
+                existing.name = rdev["name"]          # Label may change on re-plug
+                existing.storage_type = rdev["storage_type"]
+                existing.filesystem = rdev["filesystem"]
             else:
                 host_device = StorageDevice(
                     name=rdev["name"],
@@ -310,8 +332,11 @@ class StorageAnalyzerService:
                 db.add(host_device)
 
         await db.commit()
-        
-        final_result = await db.execute(select(StorageDevice).where(StorageDevice.is_sandbox == False))
+
+        # Return only currently-connected (non-sandbox) drives
+        final_result = await db.execute(
+            select(StorageDevice).where(StorageDevice.is_sandbox == False)
+        )
         return final_result.scalars().all()
 
     @staticmethod
