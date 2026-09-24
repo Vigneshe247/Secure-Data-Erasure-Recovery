@@ -47,3 +47,9 @@ Thumbs.db
 
 # Nested git clone
 Secure-Data-Erasure-Recovery/
+
+# Extra generated files
+*.db-shm
+*.db-wal
+backend/recovered_files/
+backend/storage/snapshots/
